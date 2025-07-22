@@ -43,7 +43,7 @@ void GigaLED::clear() {
 }
 
 
-void GigaLED::red(bool on) {
+void GigaLED::r(bool on) {
 
   if (on) {
     (GPIOI->ODR) &= ~(1 << 12);
@@ -52,7 +52,7 @@ void GigaLED::red(bool on) {
   }
 }
 
-void GigaLED::green(bool on) {
+void GigaLED::g(bool on) {
 
   if (on) {
     (GPIOJ->ODR) &= ~(1 << 13);
@@ -61,7 +61,7 @@ void GigaLED::green(bool on) {
   }
 }
 
-void GigaLED::blue(bool on) {
+void GigaLED::b(bool on) {
 
   if (on) {
     (GPIOE->ODR) &= ~(1 << 3);
@@ -70,31 +70,83 @@ void GigaLED::blue(bool on) {
   }
 }
 
+
+
+void GigaLED::red(bool on) {
+
+  r(on);
+  g(false);
+  b(false);
+}
+
+void GigaLED::green(bool on) {
+
+  r(false);
+  g(on);
+  b(false);
+}
+
+void GigaLED::blue(bool on) {
+
+  r(false);
+  g(false);
+  b(on);
+}
+
 void GigaLED::amber(bool on) {
 
-  red(on);
-  green(on);
+  r(on);
+  g(on);
+  b(false);
 }
 
 void GigaLED::magenta(bool on) {
 
-  blue(on);
-  red(on);
+  r(on);
+  g(false);
+  b(on);
 }
 
-void GigaLED::heartbeat(void) {
+void GigaLED::heartbeat() {
+
+  // Call the heartbeat feature, bypassing the warning flag
+  heartbeat(false);
+
+}
+
+void GigaLED::heartbeat(bool warning) {
 
   // Use the green part of the RGB LED as a heartbeat 
   if (heartbeatTimer.done()) {
     heartbeatTimer.resume();
 
     heartbeatToggle = !heartbeatToggle;
-    green(heartbeatToggle);
+
+    if (warning) {
+      amber(heartbeatToggle);
+    } else { 
+      green(heartbeatToggle);
+    }
   }
 
 }
 
-void GigaLED::test_loop(void) {
+
+void GigaLED::panic() {
+
+  // Use the red part of the RGB LED as a panic indicator 
+  if (panicTimer.done()) {
+    panicTimer.resume();
+
+    panicToggle = !panicToggle;
+
+    red(panicToggle);
+  }
+
+}
+
+
+void GigaLED::test_loop() {
 
   uint32_t led_delay = 500;
 

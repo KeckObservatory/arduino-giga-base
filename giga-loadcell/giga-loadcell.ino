@@ -37,14 +37,13 @@ Loadcell loadcell;
 
 int Delay = 100;
 
+Timer client_message_timer(1000);
+
+
 void setup() {
 
   // Setup RGB LED subsystem
   led.setup();
-
-  // Setup the load cell interface
-  loadcell.setup();
-
 
   // You can use Ethernet.init(pin) to configure the CS pin
   Ethernet.init(10);  // 10 is the slave select pin
@@ -52,14 +51,18 @@ void setup() {
   // initialize the Ethernet device
   Ethernet.begin(mac, ip, myDns, gateway, subnet);
 
+  // Setup the load cell interface 
+  // CRITICAL NOTE: This must be done _after_ the Ethernet device setup due to some not-yet-understood
+  // conflict between the devices!
+  loadcell.setup();
 
   // Check for Ethernet hardware present
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {
-  //  Serial.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
     while (true) {
-      delay(1); // do nothing, no point running without Ethernet hardware
+      led.panic();
     }
   }
+
 //  if (Ethernet.linkStatus() == LinkOFF) {
 //    Serial.println("Ethernet cable is not connected.");
 //  }
@@ -67,30 +70,31 @@ void setup() {
   // start listening for clients
   server.begin();
 
-//  Serial.print("Chat server address:");
-//  Serial.println(Ethernet.localIP());
-
-  //TimerSet(&heartbeat_timer, 500);
-  //TimerStart(&heartbeat_timer);
+  // Start the timer for emitting messages back to the client(s)
+  client_message_timer.start();
 }
 
 
 
 // A char to put incoming data from the ethernet that is ignored 
 volatile char dummy;
+char client_buffer[64];
+uint32_t loop_count = 0;
 
 void loop() {
 
-  led.heartbeat();
-
+  led.heartbeat(!loadcell.connected);
+  loadcell.loop();
 
   // Check for any new client connecting
   EthernetClient newClient = server.accept();
   if (newClient) {
     for (byte i = 0; i < 8; i++) {
       if (!clients[i]) {
-        newClient.print("Hello, client number: ");
-        newClient.println(i);
+
+        // TESTING: print a line indicating which client has connected, not used in production
+        //newClient.print("This is client number ");
+        //newClient.println(i);
 
         // Once we "accept", the client is no longer tracked by EthernetServer
         // so we must store it into our list of clients
@@ -114,4 +118,23 @@ void loop() {
       clients[i].stop();
     }
   }
+
+  // Once a second emit the device status
+  if (client_message_timer.done()) {
+
+    client_message_timer.resume();
+    loop_count++;
+
+    // Build the outbound message
+    sprintf(client_buffer, "%08lX;%d;%0lX;%li\n", loop_count, loadcell.connected, loadcell.load, loadcell.load);
+  
+    for (byte i = 0; i < 8; i++) {
+      if (clients[i] && clients[i].connected()) {
+        // Send every connected client the latest load value
+        clients[i].print(client_buffer);
+      }
+    }
+  }
+  
+
 }
