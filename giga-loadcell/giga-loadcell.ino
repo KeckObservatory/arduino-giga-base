@@ -15,6 +15,8 @@
 #include <Ethernet.h>
 
 #include "giga-led.h"  
+#include "giga-ethernet.h"  
+#include "giga-storage.h"
 #include "loadcell.h"
 
 // Enter a MAC address and IP address for your controller below.

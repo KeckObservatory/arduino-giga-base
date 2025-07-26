@@ -3,6 +3,8 @@
  *
  */
 
+#define TIMING_CPP_
+
 #include <Arduino.h>
 #include "timing.h"
 

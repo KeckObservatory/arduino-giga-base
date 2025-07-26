@@ -3,6 +3,8 @@
  *
  */
 
+#define GIGA_LED_CPP_
+
 #include <Arduino.h>
 #include "giga-led.h"
 
