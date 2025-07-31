@@ -31,6 +31,7 @@ This design makes use of these parts.
   b) Ethernet 
   c) ArduinoJson
   d) Arduino_USBHostMbed5
+  e) IniFile
 1) (optional) stacking headers to offset RS-485 shield height
 
 Source code for this project is located at <https://github.com/KeckObservatory/arduino-giga-base> under the `giga-loadcell` directory.  This document also originates from that GitHub repository.

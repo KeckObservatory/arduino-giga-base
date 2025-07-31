@@ -8,6 +8,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+
+#include <Arduino.h>
+
 #include "timing.h"
 
 #define HEARTBEAT_INTERVAL 500 // ms

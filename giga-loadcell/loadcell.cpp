@@ -5,9 +5,6 @@
 
 #define LOADCELL_CPP_
 
-#include <arduino.h>
-#include <stdint.h>
-#include <stdbool.h>
 #include "loadcell.h"
 
 void Loadcell::setup() {
