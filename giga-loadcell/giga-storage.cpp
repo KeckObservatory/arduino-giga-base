@@ -14,17 +14,10 @@ void GigaStorage::setup() {
   digitalWrite(PA_15, HIGH);
 
 
-  // Check to see if a USB drive is able to be mounted
-  Serial.print("Mounting USB device... ");
-  int err = usb.mount(&msd);
-  if (err) {
-      Serial.print("Error mounting USB device ");
-      Serial.println(err);
-      while (1);
-  }
-  Serial.println("done.");
-
+#ifdef zero
   char buf[256];
+
+
 
   // Display the root directory
   Serial.print("Opening the root directory... ");
@@ -60,16 +53,105 @@ void GigaStorage::setup() {
       snprintf(buf, sizeof(buf), "error: %s (%d)\r\n", strerror(errno), -errno);
       Serial.print(buf);
   }
-
+#endif
   
 }
 
+
+const char * GigaStorage::get_error_text(uint8_t error) {
+
+  switch (error) {
+    case GigaUsbIniFile::errorNoError:        return("no error");
+    case GigaUsbIniFile::errorFileNotFound:   return("file not found");
+    case GigaUsbIniFile::errorFileNotOpen:    return("file not open");      
+    case GigaUsbIniFile::errorBufferTooSmall: return("buffer too small");
+    case GigaUsbIniFile::errorSeekError:      return("seek error");
+    case GigaUsbIniFile::errorSectionNotFound:return("section not found");
+    case GigaUsbIniFile::errorKeyNotFound:    return("key not found");
+    case GigaUsbIniFile::errorEndOfFile:      return("end of file");
+    case GigaUsbIniFile::errorUnknownError:   return("unknown error");
+    default:                           return("unknown error value");
+  }
+}
+
+
+
+
 GigaStorage::rc GigaStorage::load() {
 
-  // Attempt to connect to a mass storage device
-  if (!msd.connect()) {
+  // Read the INI into a 2k buffer, which is rougly double the (current) size of config.ini
+  const size_t buffer_len = 2048;
+  char buffer[buffer_len];
+  char error_text[80];
+
+  int8_t retries = 10;
+
+  while (retries) {
+
+    if (!msd.connect()) {    
+      Serial.println("Trying to connect to USB...");
+      delay(100);
+      retries--;
+    } else {      
+      break;
+    }
+  }
+
+  if (retries) {
+    Serial.println("USB mass storage device is present.");
+  } else {
+    Serial.println("No USB mass storage device detected.");
     return GigaStorage::rc::NO_DEVICE;
   }
+
+/*
+  // Attempt to connect to a mass storage device
+  if (!msd.connect()) {    
+    Serial.println("No USB mass storage device detected.");
+    return GigaStorage::rc::NO_DEVICE;
+  } else {
+    Serial.println("USB mass storage device is present.");
+  }
+*/
+
+  // A device is present.  Determine if it can be mounted.
+  int err = usb.mount(&msd);
+  if (err) {
+    Serial.print("Error mounting USB mass storage device: ");
+    Serial.println(err);
+    return GigaStorage::rc::NOT_MOUNTABLE;
+  } else {
+    Serial.println("USB mass storage device mounted.");
+  }
+
+/*
+  // The device is mounted.  Does it contain a config.ini file?
+  GigaUsbIniFile ini(config_ini_filename);
+  if (ini.open() == GigaUsbIniFile::error_t::errorFileNotFound) {
+    Serial.print("INI file ");
+    Serial.print(config_ini_filename);
+    Serial.println(" does not exist on USB device.");
+    return GigaStorage::rc::NO_CONFIG_INI;
+  } else {
+    Serial.print("INI file ");
+    Serial.print(config_ini_filename);
+    Serial.println(" detected on USB device.");
+  }
+
+  // A config file is present.  Does it parse?  Are any lines longer than the buffer?
+  if (!ini.validate(buffer, buffer_len)) {
+    Serial.print("Error parsing INI file: ");
+    sprintf(error_text, "%s", get_error_text(ini.getError()));
+    Serial.println(error_text);
+  } else {
+    Serial.println("INI file loaded.");
+  }
+*/
+
+  // The config file is a valid INI file.  Retrieve all the fields for each section and 
+  // store them in the registry.
+
+
 
 
   return GigaStorage::rc::CONFIG_INI_LOAD_SUCCESS;

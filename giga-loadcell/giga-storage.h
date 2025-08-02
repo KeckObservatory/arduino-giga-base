@@ -14,12 +14,8 @@
 #include <FATFileSystem.h>
 #include <Arduino_USBHostMbed5.h>
 
+#include "giga-usb-ini.h"
 #include "timing.h"
-
-// Define the configuration filenames
-const char config_ini_filename[] = "config.ini";
-const char config_ini_saved_filename[] = "config.ini.S";
-
 
 /* ************************************************************************** */
 /* CONFIGURATION / SETTINGS                                                   */
@@ -53,10 +49,11 @@ class GigaStorage {
     };
 
 
-    GigaStorage() : usb("usb") {}
+    GigaStorage() : msd(), usb("usb") {}
 
 
     void setup();
+    const char * get_error_text(uint8_t error);
     GigaStorage::rc load();
 
     void clear();

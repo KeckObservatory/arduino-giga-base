@@ -17,6 +17,7 @@
 #include "giga-led.h"  
 #include "giga-ethernet.h"  
 #include "giga-storage.h"
+#include "giga-config.h"
 #include "loadcell.h"
 
 // Enter a MAC address and IP address for your controller below.
@@ -35,6 +36,8 @@ EthernetClient clients[8];
 bool alreadyConnected = false; // whether or not the client was connected previously
 
 GigaLED led;
+GigaStorage storage;
+GigaConfig config;
 Loadcell loadcell;
 
 int Delay = 100;
@@ -52,6 +55,13 @@ void setup() {
 
   // initialize the Ethernet device
   Ethernet.begin(mac, ip, myDns, gateway, subnet);
+
+  // Setup the storage interface (USB device)
+  storage.setup();
+  storage.load();
+
+  // Setup the configuration subsystem
+  config.setup();
 
   // Setup the load cell interface 
   // CRITICAL NOTE: This must be done _after_ the Ethernet device setup due to some not-yet-understood
