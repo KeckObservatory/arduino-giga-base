@@ -58,7 +58,9 @@ void setup() {
 
   // Setup the storage interface (USB device)
   storage.setup();
-  storage.load();
+
+  char buf[32];
+  storage.load(buf, 32, "/usb/config.ini");
 
   // Setup the configuration subsystem
   config.setup();

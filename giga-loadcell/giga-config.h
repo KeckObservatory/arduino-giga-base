@@ -16,9 +16,10 @@
 #include <IPAddress.h>
 
 // Max sizes for various elements
-#define MAX_LENGTH_KEY 64
-#define MAX_LENGTH_VAL 64
-#define MAX_SIZE_MAP   64
+#define MAX_LENGTH_KEY      64
+#define MAX_LENGTH_VAL      64
+#define MAX_SIZE_MAP        64
+#define MAX_SIZE_CONFIG_INI 4096
 
 // Define the configuration filenames
 const char config_ini_filename[] = "config.ini";
@@ -38,10 +39,10 @@ private:
 
 public:
 
-	enum error_t {
+	enum rc {
 		NO_ERROR = 0,
-		FILE_NOT_FOUND,
-		BUFFER_TOO_SMALL,
+		CONFIG_FILE_NOT_FOUND,
+    CONFIG_FILE_TOO_LARGE,
 		UNKNOWN_ERROR,
 	};
 	
@@ -49,6 +50,8 @@ public:
 	~GigaConfig();
 
   void setup();
+  const char * get_error_text(uint8_t error);
+
 
 };
 

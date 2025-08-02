@@ -58,36 +58,27 @@ void GigaStorage::setup() {
 }
 
 
-const char * GigaStorage::get_error_text(uint8_t error) {
+const char * GigaStorage::get_error_text(GigaStorage::rc error) {
 
   switch (error) {
-    case GigaUsbIniFile::errorNoError:        return("no error");
-    case GigaUsbIniFile::errorFileNotFound:   return("file not found");
-    case GigaUsbIniFile::errorFileNotOpen:    return("file not open");      
-    case GigaUsbIniFile::errorBufferTooSmall: return("buffer too small");
-    case GigaUsbIniFile::errorSeekError:      return("seek error");
-    case GigaUsbIniFile::errorSectionNotFound:return("section not found");
-    case GigaUsbIniFile::errorKeyNotFound:    return("key not found");
-    case GigaUsbIniFile::errorEndOfFile:      return("end of file");
-    case GigaUsbIniFile::errorUnknownError:   return("unknown error");
-    default:                           return("unknown error value");
+    
+    case GigaStorage::rc::NO_ERROR:           return("no error");
+    case GigaStorage::rc::NO_DEVICE:          return("no device detected in USB port");
+    case GigaStorage::rc::NOT_MOUNTABLE:      return("device not mountable");
+    case GigaStorage::rc::NO_FILE:            return("file not present");
+    case GigaStorage::rc::FILE_TOO_LARGE:     return("file too large for provided buffer");
+    default:                                  return("unknown error value");
   }
 }
 
 
+GigaStorage::rc GigaStorage::load(char* buffer, uint32_t buffer_length, const char* filename) {
 
-
-GigaStorage::rc GigaStorage::load() {
-
-  // Read the INI into a 2k buffer, which is rougly double the (current) size of config.ini
-  const size_t buffer_len = 2048;
-  char buffer[buffer_len];
-  char error_text[80];
+  char error_text[128];
 
   int8_t retries = 10;
 
-  while (retries) {
-
+  while (retries > 0) {
     if (!msd.connect()) {    
       Serial.println("Trying to connect to USB...");
       delay(100);
@@ -104,16 +95,6 @@ GigaStorage::rc GigaStorage::load() {
     return GigaStorage::rc::NO_DEVICE;
   }
 
-/*
-  // Attempt to connect to a mass storage device
-  if (!msd.connect()) {    
-    Serial.println("No USB mass storage device detected.");
-    return GigaStorage::rc::NO_DEVICE;
-  } else {
-    Serial.println("USB mass storage device is present.");
-  }
-*/
-
   // A device is present.  Determine if it can be mounted.
   int err = usb.mount(&msd);
   if (err) {
@@ -123,6 +104,33 @@ GigaStorage::rc GigaStorage::load() {
   } else {
     Serial.println("USB mass storage device mounted.");
   }
+
+  // The device is mounted.  Does it contain a config.ini file?
+  FILE* file = fopen(filename, "r");
+
+  if (!file) {
+    sprintf(error_text, "File %s cannot be opened on USB mass storage device, errno = %d", filename, errno);
+    Serial.println(error_text);
+    return GigaStorage::rc::NO_FILE;
+  }
+
+  // Determine the size of the file
+  fseek(file, 0L, SEEK_END);
+  uint32_t file_size = ftell(file);
+  if (file_size > buffer_length) {
+    sprintf(error_text, "File %s too large (%d bytes) for internal buffer (%d bytes)", filename, file_size, buffer_length);
+    Serial.println(error_text);
+    return GigaStorage::rc::FILE_TOO_LARGE;
+  } else {
+    sprintf(error_text, "File %s is %d bytes.", filename, file_size);
+    Serial.println(error_text);
+  }
+
+  // Load the file into the buffer
+  rewind(file);
+
+
+  fclose(file);
 
 /*
   // The device is mounted.  Does it contain a config.ini file?
@@ -154,7 +162,7 @@ GigaStorage::rc GigaStorage::load() {
 
 
 
-  return GigaStorage::rc::CONFIG_INI_LOAD_SUCCESS;
+  return GigaStorage::rc::NO_ERROR;
 
 }
 
@@ -166,32 +174,6 @@ void GigaStorage::clear() {
 
 
 
-
-
-
-#ifdef zero
-
-
-
-void setup()
-{
-    Serial.begin(115200);
-    while (!Serial)
-        ;
-
-    Serial.println("Starting USB Dir List example...");
-
-    // if you are using a Max Carrier uncomment the following line
-    // start_hub();
-
-
-}
-
-void loop()
-{
-}
-
-#endif
 
 
 

@@ -14,7 +14,6 @@
 #include <FATFileSystem.h>
 #include <Arduino_USBHostMbed5.h>
 
-#include "giga-usb-ini.h"
 #include "timing.h"
 
 /* ************************************************************************** */
@@ -25,11 +24,7 @@
   To configure this Giga device, the user is required to populate a USB thumb
   drive with a file that contains the settings
 
-
-
 */
-
-
 
 
 class GigaStorage {
@@ -40,21 +35,18 @@ class GigaStorage {
 
   public:
     enum rc {
-        CONFIG_INI_LOAD_SUCCESS,
+        NO_ERROR = 0,
         NO_DEVICE,
         NOT_MOUNTABLE,
-        NO_CONFIG_INI,
-        CONFIG_INI_PARSE_FAILED,
-        CONFIG_INI_MISSING_KEY,
+        NO_FILE,
+        FILE_TOO_LARGE,
     };
-
 
     GigaStorage() : msd(), usb("usb") {}
 
-
     void setup();
-    const char * get_error_text(uint8_t error);
-    GigaStorage::rc load();
+    const char * get_error_text(GigaStorage::rc error);
+    GigaStorage::rc load(char* buffer, uint32_t buffer_length, const char* filename);
 
     void clear();
 
