@@ -47,20 +47,28 @@ Timer client_message_timer(1000);
 
 void setup() {
 
+  // Hold off on setup for two seconds to allow the USB port to connect to the PC, if one is present
+  delay(2000);
+  SerialUSB.begin(115200);
+  SerialUSB.println("");
+  SerialUSB.println("--------------------------------------------------------------------------------");
+  SerialUSB.println(">>> Load cell device initialization start.");
+
   // Setup RGB LED subsystem
   led.setup();
 
   // You can use Ethernet.init(pin) to configure the CS pin
+  SerialUSB.println(">>> Init: ethernet.");
   Ethernet.init(10);  // 10 is the slave select pin
 
   // initialize the Ethernet device
   Ethernet.begin(mac, ip, myDns, gateway, subnet);
 
   // Setup the storage interface (USB device)
+  SerialUSB.println(">>> Init: storage.");
   storage.setup();
 
-  char buf[32];
-  storage.load(buf, 32, "/usb/config.ini");
+  storage.load_file(config.config_ini_buffer, MAX_SIZE_CONFIG_INI, config.config_ini_filename);
 
   // Setup the configuration subsystem
   config.setup();
@@ -68,6 +76,7 @@ void setup() {
   // Setup the load cell interface 
   // CRITICAL NOTE: This must be done _after_ the Ethernet device setup due to some not-yet-understood
   // conflict between the devices!
+  SerialUSB.println(">>> Init: load cell.");
   loadcell.setup();
 
   // Check for Ethernet hardware present
@@ -82,10 +91,13 @@ void setup() {
 //  }
 
   // start listening for clients
+  SerialUSB.println(">>> Init: TCP/IP server.");
   server.begin();
 
   // Start the timer for emitting messages back to the client(s)
   client_message_timer.start();
+
+  SerialUSB.println(">>> Initialization complete.");
 }
 
 
@@ -149,6 +161,5 @@ void loop() {
       }
     }
   }
-  
 
 }

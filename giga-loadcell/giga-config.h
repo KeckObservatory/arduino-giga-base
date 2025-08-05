@@ -19,10 +19,11 @@
 #define MAX_LENGTH_KEY      64
 #define MAX_LENGTH_VAL      64
 #define MAX_SIZE_MAP        64
-#define MAX_SIZE_CONFIG_INI 4096
+#define MAX_SIZE_CONFIG_INI 16384
 
 // Define the configuration filenames
-const char config_ini_filename[] = "config.ini";
+//const char config_ini_filename[] = "/usb/config.ini";
+#define CONFIG_INI_FILENAME "/usb/config.ini"
 const char config_ini_saved_filename[] = "config.ini.S";
 
 // Define the network registry keys that ought to be present in config.ini
@@ -38,6 +39,8 @@ private:
   etl::unordered_map<etl::string<MAX_LENGTH_KEY>, etl::string<MAX_LENGTH_VAL>, MAX_SIZE_MAP> registry;
 
 public:
+	char config_ini_buffer[MAX_SIZE_CONFIG_INI];
+	static const char config_ini_filename[];
 
 	enum rc {
 		NO_ERROR = 0,
@@ -46,12 +49,11 @@ public:
 		UNKNOWN_ERROR,
 	};
 	
-	GigaConfig() : registry() {};
+	GigaConfig() : registry() { bzero(config_ini_buffer, sizeof(config_ini_buffer)); };
 	~GigaConfig();
 
   void setup();
   const char * get_error_text(uint8_t error);
-
 
 };
 

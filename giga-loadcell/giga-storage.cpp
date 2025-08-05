@@ -11,50 +11,7 @@ void GigaStorage::setup() {
 
   // Enable the USB-A port
   pinMode(PA_15, OUTPUT); 
-  digitalWrite(PA_15, HIGH);
-
-
-#ifdef zero
-  char buf[256];
-
-
-
-  // Display the root directory
-  Serial.print("Opening the root directory... ");
-  DIR* d = opendir("/usb/");
-  Serial.println(!d ? "Fail :(" : "Done");
-  if (!d) {
-      snprintf(buf, sizeof(buf), "error: %s (%d)\r\n", strerror(errno), -errno);
-      Serial.print(buf);
-  }
-  Serial.println("done.");
-
-  Serial.println("Root directory:");
-  unsigned int count { 0 };
-  while (true) {
-      struct dirent* e = readdir(d);
-      if (!e) {
-          break;
-      }
-      count++;
-      snprintf(buf, sizeof(buf), "    %s\r\n", e->d_name);
-      Serial.print(buf);
-  }
-  Serial.print(count);
-  Serial.println(" files found!");
-
-  snprintf(buf, sizeof(buf), "Closing the root directory... ");
-  Serial.print(buf);
-  fflush(stdout);
-  err = closedir(d);
-  snprintf(buf, sizeof(buf), "%s\r\n", (err < 0 ? "Fail :(" : "OK"));
-  Serial.print(buf);
-  if (err < 0) {
-      snprintf(buf, sizeof(buf), "error: %s (%d)\r\n", strerror(errno), -errno);
-      Serial.print(buf);
-  }
-#endif
-  
+  digitalWrite(PA_15, HIGH); 
 }
 
 
@@ -72,7 +29,7 @@ const char * GigaStorage::get_error_text(GigaStorage::rc error) {
 }
 
 
-GigaStorage::rc GigaStorage::load(char* buffer, uint32_t buffer_length, const char* filename) {
+GigaStorage::rc GigaStorage::load_file(char* buffer, uint32_t buffer_length, const char* filename) {
 
   char error_text[128];
 
@@ -118,50 +75,33 @@ GigaStorage::rc GigaStorage::load(char* buffer, uint32_t buffer_length, const ch
   fseek(file, 0L, SEEK_END);
   uint32_t file_size = ftell(file);
   if (file_size > buffer_length) {
-    sprintf(error_text, "File %s too large (%d bytes) for internal buffer (%d bytes)", filename, file_size, buffer_length);
+    sprintf(error_text, "File %s too large (%d bytes) for internal buffer (%d bytes).", filename, file_size, buffer_length);
     Serial.println(error_text);
+    fclose(file);
     return GigaStorage::rc::FILE_TOO_LARGE;
   } else {
-    sprintf(error_text, "File %s is %d bytes.", filename, file_size);
+    sprintf(error_text, "File %s found, %d bytes.", filename, file_size);
     Serial.println(error_text);
   }
 
   // Load the file into the buffer
   rewind(file);
 
+  uint32_t bytes_read = fread(buffer, sizeof(char), file_size, file);
 
+  // Make sure we got what we asked for
+  if (bytes_read != file_size) {
+    sprintf(error_text, "File %s not fully read: %d bytes loaded of %d bytes total.", filename, bytes_read, file_size);
+    Serial.println(error_text);
+    return GigaStorage::rc::FILE_NOT_READ;
+  } 
+
+  // Done with file handle
   fclose(file);
 
-/*
-  // The device is mounted.  Does it contain a config.ini file?
-  GigaUsbIniFile ini(config_ini_filename);
-  if (ini.open() == GigaUsbIniFile::error_t::errorFileNotFound) {
-    Serial.print("INI file ");
-    Serial.print(config_ini_filename);
-    Serial.println(" does not exist on USB device.");
-    return GigaStorage::rc::NO_CONFIG_INI;
-  } else {
-    Serial.print("INI file ");
-    Serial.print(config_ini_filename);
-    Serial.println(" detected on USB device.");
-  }
-
-  // A config file is present.  Does it parse?  Are any lines longer than the buffer?
-  if (!ini.validate(buffer, buffer_len)) {
-    Serial.print("Error parsing INI file: ");
-    sprintf(error_text, "%s", get_error_text(ini.getError()));
-    Serial.println(error_text);
-  } else {
-    Serial.println("INI file loaded.");
-  }
-*/
-
-  // The config file is a valid INI file.  Retrieve all the fields for each section and 
-  // store them in the registry.
-
-
-
-
+  // Return the buffer to the user
+  sprintf(error_text, "File %s loaded.", filename, bytes_read);
+  Serial.println(error_text);
   return GigaStorage::rc::NO_ERROR;
 
 }

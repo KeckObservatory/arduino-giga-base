@@ -9,8 +9,10 @@
 
 #include "giga-config.h"
 
-GigaConfig::~GigaConfig() {
-}
+const char GigaConfig::config_ini_filename[] = CONFIG_INI_FILENAME;
+
+
+GigaConfig::~GigaConfig() {}
 
 void GigaConfig::setup() {
 
