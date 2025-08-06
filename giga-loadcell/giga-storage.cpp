@@ -29,7 +29,7 @@ const char * GigaStorage::get_error_text(GigaStorage::rc error) {
 }
 
 
-GigaStorage::rc GigaStorage::load_file(char* buffer, uint32_t buffer_length, const char* filename) {
+GigaStorage::rc GigaStorage::load_file(char* buffer, uint32_t* buffer_length, const char* filename) {
 
   char error_text[128];
 
@@ -74,8 +74,8 @@ GigaStorage::rc GigaStorage::load_file(char* buffer, uint32_t buffer_length, con
   // Determine the size of the file
   fseek(file, 0L, SEEK_END);
   uint32_t file_size = ftell(file);
-  if (file_size > buffer_length) {
-    sprintf(error_text, "File %s too large (%d bytes) for internal buffer (%d bytes).", filename, file_size, buffer_length);
+  if (file_size > *buffer_length) {
+    sprintf(error_text, "File %s too large (%d bytes) for internal buffer (%d bytes).", filename, file_size, *buffer_length);
     Serial.println(error_text);
     fclose(file);
     return GigaStorage::rc::FILE_TOO_LARGE;
@@ -86,7 +86,6 @@ GigaStorage::rc GigaStorage::load_file(char* buffer, uint32_t buffer_length, con
 
   // Load the file into the buffer
   rewind(file);
-
   uint32_t bytes_read = fread(buffer, sizeof(char), file_size, file);
 
   // Make sure we got what we asked for
@@ -99,20 +98,15 @@ GigaStorage::rc GigaStorage::load_file(char* buffer, uint32_t buffer_length, con
   // Done with file handle
   fclose(file);
 
+  // Update the pointer to the buffer length with the actual size of the file inside it
+  *buffer_length = bytes_read;
+
   // Return the buffer to the user
   sprintf(error_text, "File %s loaded.", filename, bytes_read);
   Serial.println(error_text);
   return GigaStorage::rc::NO_ERROR;
 
 }
-
-void GigaStorage::clear() {
-
-
-}
-
-
-
 
 
 

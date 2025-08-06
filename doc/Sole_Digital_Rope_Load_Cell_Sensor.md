@@ -29,9 +29,8 @@ This design makes use of these parts.
 1) Arduino IDE with these libraries installed
   a) Arduino Mbed OS Giga Boards (board support package, also provides SPI library)
   b) Ethernet 
-  c) ArduinoJson
-  d) Arduino_USBHostMbed5
-  e) IniFile
+  c) Arduino_USBHostMbed5
+  d) Embedded Template Library v20.42.2 or later (https://github.com/ETLCPP/etl/releases)
 1) (optional) stacking headers to offset RS-485 shield height
 
 Source code for this project is located at <https://github.com/KeckObservatory/arduino-giga-base> under the `giga-loadcell` directory.  This document also originates from that GitHub repository.

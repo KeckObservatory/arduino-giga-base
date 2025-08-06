@@ -35,12 +35,11 @@ EthernetServer server(23);
 EthernetClient clients[8];
 bool alreadyConnected = false; // whether or not the client was connected previously
 
+// Instances of the classes needed to run the LED, USB, and load cell 
 GigaLED led;
 GigaStorage storage;
 GigaConfig config;
 Loadcell loadcell;
-
-int Delay = 100;
 
 Timer client_message_timer(1000);
 
@@ -68,7 +67,15 @@ void setup() {
   SerialUSB.println(">>> Init: storage.");
   storage.setup();
 
-  storage.load_file(config.config_ini_buffer, MAX_SIZE_CONFIG_INI, config.config_ini_filename);
+  // Load the INI file into the buffer in the GigaConfig instance
+  GigaStorage::rc rc = storage.load_file(config.config_ini_buffer, &config.config_ini_buffer_length, config.config_ini_filename);
+  if (rc == GigaStorage::rc::NO_ERROR) {
+    SerialUSB.println(">>> Init: Processing INI file.");
+
+    // Parse the INI file and store the values in flash
+    GigaConfig::rc rc_ini = config.load_ini();
+
+  }
 
   // Setup the configuration subsystem
   config.setup();

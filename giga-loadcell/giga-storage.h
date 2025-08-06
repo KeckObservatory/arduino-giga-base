@@ -47,9 +47,7 @@ class GigaStorage {
 
     void setup();
     const char * get_error_text(GigaStorage::rc error);
-    GigaStorage::rc load_file(char* buffer, uint32_t buffer_length, const char* filename);
-
-    void clear();
+    GigaStorage::rc load_file(char* buffer, uint32_t* buffer_length, const char* filename);
 
 };
 
