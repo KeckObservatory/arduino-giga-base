@@ -12,6 +12,9 @@ void GigaStorage::setup() {
   // Enable the USB-A port
   pinMode(PA_15, OUTPUT); 
   digitalWrite(PA_15, HIGH); 
+
+  // Enable the registry
+  registry_store.init();
 }
 
 
@@ -28,11 +31,17 @@ const char * GigaStorage::get_error_text(GigaStorage::rc error) {
   }
 }
 
-
+/* Load a file from the USB flash drive into memory.  The destination buffer is provided, as is the length, 
+ * and a filename to load from.  The mbed library mounts the flash drive under the path "/usb" which is 
+ * defined by the initializer in the header file.  All filenames on the drive are therefore prefixed first 
+ * by "/usb/".  This routine is typically used for reading the configuration INI file off disk.
+ */
 GigaStorage::rc GigaStorage::load_file(char* buffer, uint32_t* buffer_length, const char* filename) {
 
   char error_text[128];
 
+  // There is a race condition for connecting to the USB subsystem.  Give it 10 tries with 100ms
+  // delay between them, and msd.connect() will eventually succeed.
   int8_t retries = 10;
 
   while (retries > 0) {
@@ -45,6 +54,7 @@ GigaStorage::rc GigaStorage::load_file(char* buffer, uint32_t* buffer_length, co
     }
   }
 
+  // If no USB flash drive is present then bail out now.
   if (retries) {
     Serial.println("USB mass storage device is present.");
   } else {
@@ -62,7 +72,7 @@ GigaStorage::rc GigaStorage::load_file(char* buffer, uint32_t* buffer_length, co
     Serial.println("USB mass storage device mounted.");
   }
 
-  // The device is mounted.  Does it contain a config.ini file?
+  // The device is mounted.  Does it contain the specified file?
   FILE* file = fopen(filename, "r");
 
   if (!file) {
@@ -71,41 +81,44 @@ GigaStorage::rc GigaStorage::load_file(char* buffer, uint32_t* buffer_length, co
     return GigaStorage::rc::NO_FILE;
   }
 
-  // Determine the size of the file
+  // Determine the size of the file, such that we can determine if it will fit in the buffer.  
+  // As of the time of development this routine is only used for reading INI files from flash drives.  The 
+  // maximum size of the file is dictated by the buffer it will be read into, which for the moment is
+  // set to 16Kbytes.  Increase this as needed for your project but be aware the Giga R1 only has
+  // 512Kbytes of RAM.
   fseek(file, 0L, SEEK_END);
   uint32_t file_size = ftell(file);
   if (file_size > *buffer_length) {
-    sprintf(error_text, "File %s too large (%d bytes) for internal buffer (%d bytes).", filename, file_size, *buffer_length);
+    sprintf(error_text, "File %s too large (%ld bytes) for internal buffer (%ld bytes).", filename, file_size, *buffer_length);
     Serial.println(error_text);
     fclose(file);
     return GigaStorage::rc::FILE_TOO_LARGE;
   } else {
-    sprintf(error_text, "File %s found, %d bytes.", filename, file_size);
+    sprintf(error_text, "File %s found, %ld bytes.", filename, file_size);
     Serial.println(error_text);
   }
 
-  // Load the file into the buffer
+  // Load the file into the buffer.
   rewind(file);
   uint32_t bytes_read = fread(buffer, sizeof(char), file_size, file);
 
-  // Make sure we got what we asked for
+  // Make sure we got what we asked for.
   if (bytes_read != file_size) {
-    sprintf(error_text, "File %s not fully read: %d bytes loaded of %d bytes total.", filename, bytes_read, file_size);
+    sprintf(error_text, "File %s not fully read: %ld bytes loaded of %ld bytes total.", filename, bytes_read, file_size);
     Serial.println(error_text);
     return GigaStorage::rc::FILE_NOT_READ;
   } 
 
-  // Done with file handle
+  // Done with file handle.
   fclose(file);
 
-  // Update the pointer to the buffer length with the actual size of the file inside it
+  // Update the pointer to the buffer length with the actual size of the file inside it.
   *buffer_length = bytes_read;
 
-  // Return the buffer to the user
-  sprintf(error_text, "File %s loaded.", filename, bytes_read);
+  // Return the buffer to the user.
+  sprintf(error_text, "File %s loaded.", filename);
   Serial.println(error_text);
   return GigaStorage::rc::NO_ERROR;
-
 }
 
 

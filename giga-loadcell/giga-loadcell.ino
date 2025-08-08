@@ -41,7 +41,7 @@ GigaStorage storage;
 GigaConfig config;
 Loadcell loadcell;
 
-Timer client_message_timer(1000);
+Timer client_message_timer(100);
 
 
 void setup() {
@@ -74,6 +74,10 @@ void setup() {
 
     // Parse the INI file and store the values in flash
     GigaConfig::rc rc_ini = config.load_ini();
+
+    if (rc_ini != GigaConfig::rc::NO_ERROR) {
+      SerialUSB.println(">>> Init: Failed to load INI file!");
+    }
 
   }
 

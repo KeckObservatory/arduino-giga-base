@@ -9,13 +9,13 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <Embedded_Template_Library.h>
+#include <Arduino_USBHostMbed5.h>
+#include <IPAddress.h>
+ #include <Embedded_Template_Library.h>
 #include <etl/unordered_map.h>
 #include <etl/string.h>
 #include <etl/string_utilities.h>
 #include <etl/optional.h>
-#include <Arduino_USBHostMbed5.h>
-#include <IPAddress.h>
 
 // Max sizes for various elements
 #define MAX_LENGTH_KEY_VAL  64
@@ -24,17 +24,14 @@
 #define MAX_SIZE_CONFIG_INI 16384
 
 // Define the configuration filenames
-//const char config_ini_filename[] = "/usb/config.ini";
-#define CONFIG_INI_FILENAME "/usb/config.ini"
-#define CONFIG_INI_SAVED_FILENAME "config.ini.S"
+#define CONFIG_INI_FILENAME       "/usb/config.ini"
 
-// Define the network registry keys that ought to be present in config.ini
-const char registry_network_ip[] = "network.ip";
-const char registry_network_netmask[] = "network.netmask";
-const char registry_network_gateway[] = "network.gateway";
-const char registry_network_dns[] = "network.dns";
-
-
+// Define the registry keys that ought to be present in config.ini
+const char registry_net_ip[]          = "net.ip";
+const char registry_net_netmask[]     = "net.netmask";
+const char registry_net_gateway[]     = "net.gateway";
+const char registry_net_dns[]         = "net.dns";
+const char registry_cal_placeholder[] = "cal.placeholder";
 
 class GigaConfig {
 private:

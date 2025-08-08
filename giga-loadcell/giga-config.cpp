@@ -1,6 +1,3 @@
-#include "etl/string_utilities.h"
-#include "etl/string.h"
-#include "etl/unordered_map.h"
 /*
  * giga-config.c: implementation of a configuration module for the Giga R1
  *                supports reading a settings file from a USB filesystem 
@@ -12,15 +9,14 @@
 
 // Assign values to the const strings in the class
 const char GigaConfig::config_ini_filename[] = CONFIG_INI_FILENAME;
-const char GigaConfig::config_ini_saved_filename[] = CONFIG_INI_SAVED_FILENAME;
 
 void GigaConfig::setup() {
 
-  etl::string<MAX_LENGTH_KEY_VAL> s1 = registry_network_ip;
+  etl::string<MAX_LENGTH_KEY_VAL> s1 = registry_net_ip;
   etl::string<MAX_LENGTH_KEY_VAL> s2 = "10.77.0.210";
   auto s1s2 = etl::make_pair(s1, s2);
 
-  etl::string<MAX_LENGTH_KEY_VAL> s3 = registry_network_netmask;
+  etl::string<MAX_LENGTH_KEY_VAL> s3 = registry_net_netmask;
   etl::string<MAX_LENGTH_KEY_VAL> s4 = "255.255.0.0";
   auto s3s4 = etl::make_pair(s3, s4);
 
@@ -90,7 +86,7 @@ GigaConfig::rc GigaConfig::load_ini() {
       etl::trim_whitespace(key);
       etl::trim_whitespace(val);
 
-      SerialUSB.print("[INI] ");
+      SerialUSB.print("[INI]   ");
       SerialUSB.print(key.c_str());
       SerialUSB.print(" -> ");
       SerialUSB.println(val.c_str());
