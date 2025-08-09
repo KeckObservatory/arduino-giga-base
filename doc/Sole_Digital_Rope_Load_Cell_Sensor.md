@@ -43,17 +43,21 @@ Source code for this project is located at <https://github.com/KeckObservatory/a
 
     ![alt text](stacking_header_image.png)
 
+1) Install the Arduino IDE 2.x and the libraries listed above.
+
+1) Connect the Arduino Giga to the PC with a USB cable.
+
+1) Before using the Giga device with our source code, the internal flash must be partitioned and formatted.  The Arduino library provides an example sketch that is used interactively to do this; it will create 4 partitions: two for use with WiFi, one 1MB key/value store (the part this project needs), and one for user date.  Prepare the device flash by running File > Examples > STM32H747_System > QSPIFormat
+ 
 1) Download the source code repository from GitHub.
 
-1) Copy the repository file `settings.json` to your USB thumb drive formatted for FAT32.
+1) Copy the repository file `config.ini` to your USB thumb drive formatted for FAT32.
 
-1) Modify the `settings.json` to have an appropriate MAC address and IP address for the subnet you plan to run it on.  The MAC address can be entirely random; it simply has to be different from every other device on your network.  See the section on SETTINGS below for details on this file.
+1) Modify the `config.ini` to have an IP address (and netmask, etc) for the subnet you plan to run it on.  The MAC address will be generated in code based on the uniqe ID in the microprocessor.  See the section on SETTINGS below for details on this file.
 
 1) Open the .ino file for the giga-loadcell in the Arduino IDE.
 
-1) Install the libraries listed above.
 
-1) Connect the Arduino Giga to the PC with a USB cable.
 
 1) Compile the project.
 

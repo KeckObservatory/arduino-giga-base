@@ -18,11 +18,30 @@
 #include <DigitalOut.h>
 #include <Arduino_USBHostMbed5.h>
 #include <QSPIFBlockDevice.h>
+#include <BlockDevice.h>
 #include <MBRBlockDevice.h>
 #include <TDBStore.h>
 #include <FATFileSystem.h>
 
 #include "timing.h"
+
+// The key/value storage partition was created when formatting the device previously with this code.
+// It lives on partition 1 which is currently the only one we need.  Store 1MB of keys here with 15MB
+// remaining for later expansion.
+#define KVSTORE_PARTITION_NUMBER      1
+#define KVSTORE_PARTITION_SIZE_MB     1
+#define KVSTORE_PARTITION_SIZE       (KVSTORE_PARTITION_SIZE_MB * 1024 * 1024)
+
+// The partition type is FAT32 with CHS addressing, see https://en.wikipedia.org/wiki/Partition_type#List_of_partition_IDs
+#define KVSTORE_PARTITION_TYPE_FAT32  0x0B
+
+// Define this to 1 during development/testing to force a reformat of the flash
+#define KVSTORE_FORCE_REFORMAT        0
+
+// Define registry keys for use with flash init
+const char registry_tdb_initialized[] = "tdb.initialized";
+const char registry_tdb_initialized_text[] = "format 1";  // Indicates the registry format version, for future use
+
 
 /* ************************************************************************** */
 /* CONFIGURATION / SETTINGS                                                   */
@@ -55,17 +74,20 @@ class GigaStorage {
         NO_FILE,
         FILE_TOO_LARGE,
         FILE_NOT_READ,
+        FLASH_UNFORMATTED,
+        FLASH_FORMAT_FAILURE
     };
 
     GigaStorage() : msd(), 
                     usb("usb"),  
                     block_device(QSPI_SO0, QSPI_SO1, QSPI_SO2, QSPI_SO3, QSPI_SCK, QSPI_CS, QSPIF_POLARITY_MODE_1, 40000000),
-                    tdb_data(&block_device, 4),
+                    tdb_data(&block_device, KVSTORE_PARTITION_NUMBER),
                     registry_store(&tdb_data)
                     {}
 
     void setup();
-    const char * get_error_text(GigaStorage::rc error);
+    GigaStorage::rc test_flash();
+    GigaStorage::rc format_flash();
     GigaStorage::rc load_file(char* buffer, uint32_t* buffer_length, const char* filename);
 
 };

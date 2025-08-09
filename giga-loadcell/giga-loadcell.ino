@@ -67,6 +67,16 @@ void setup() {
   SerialUSB.println(">>> Init: storage.");
   storage.setup();
 
+  // Check that the flash is formatted for use
+  GigaStorage::rc err = storage.test_flash();
+  if ((err == GigaStorage::rc::FLASH_UNFORMATTED) || KVSTORE_FORCE_REFORMAT) {
+    SerialUSB.println(">>> Init: Flash is unreadable or unformatted! Auto initializing...");
+    storage.format_flash();
+  }
+
+  while (1) led.panic();
+
+
   // Load the INI file into the buffer in the GigaConfig instance
   GigaStorage::rc rc = storage.load_file(config.config_ini_buffer, &config.config_ini_buffer_length, config.config_ini_filename);
   if (rc == GigaStorage::rc::NO_ERROR) {
