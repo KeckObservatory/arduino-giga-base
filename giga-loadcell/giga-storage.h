@@ -42,18 +42,6 @@
 const char registry_tdb_initialized[] = "tdb.initialized";
 const char registry_tdb_initialized_text[] = "format 1";  // Indicates the registry format version, for future use
 
-
-/* ************************************************************************** */
-/* CONFIGURATION / SETTINGS                                                   */
-/* ************************************************************************** */
-
-/*
-  To configure this Giga device, the user is required to populate a USB thumb
-  drive with a file that contains the settings
-
-*/
-
-
 class GigaStorage {
 
   private:
@@ -86,9 +74,9 @@ class GigaStorage {
                     {}
 
     void setup();
-    GigaStorage::rc test_flash();
-    GigaStorage::rc format_flash();
-    GigaStorage::rc load_file(char* buffer, uint32_t* buffer_length, const char* filename);
+    GigaStorage::rc flash_test();
+    GigaStorage::rc flash_format();
+    GigaStorage::rc usb_file_load(char* buffer, uint32_t* buffer_length, const char* filename);
 
 };
 

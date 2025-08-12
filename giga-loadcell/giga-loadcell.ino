@@ -23,22 +23,21 @@
 // Enter a MAC address and IP address for your controller below.
 // The IP address will be dependent on your local network.
 // gateway and subnet are optional:
-byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEE };
-IPAddress ip(10, 77, 0, 210);
-IPAddress myDns(8, 8, 8, 8);
-IPAddress gateway(10, 77, 0, 1);
-IPAddress subnet(255, 255, 0, 0);
-
+////byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEE };
+////IPAddress ip(10, 77, 0, 210);
+////IPAddress myDns(8, 8, 8, 8);
+////IPAddress gateway(10, 77, 0, 1);
+////IPAddress subnet(255, 255, 0, 0);
 
 // telnet defaults to port 23
-EthernetServer server(23);
-EthernetClient clients[8];
-bool alreadyConnected = false; // whether or not the client was connected previously
+////EthernetServer server(23);
+////EthernetClient clients[8];
 
 // Instances of the classes needed to run the LED, USB, and load cell 
 GigaLED led;
 GigaStorage storage;
-GigaConfig config;
+GigaConfig config(storage);
+GigaEthernet ethernet(config);
 Loadcell loadcell;
 
 Timer client_message_timer(100);
@@ -56,43 +55,23 @@ void setup() {
   // Setup RGB LED subsystem
   led.setup();
 
-  // You can use Ethernet.init(pin) to configure the CS pin
-  SerialUSB.println(">>> Init: ethernet.");
-  Ethernet.init(10);  // 10 is the slave select pin
-
-  // initialize the Ethernet device
-  Ethernet.begin(mac, ip, myDns, gateway, subnet);
-
   // Setup the storage interface (USB device)
   SerialUSB.println(">>> Init: storage.");
   storage.setup();
 
-  // Check that the flash is formatted for use
-  GigaStorage::rc err = storage.test_flash();
-  if ((err == GigaStorage::rc::FLASH_UNFORMATTED) || KVSTORE_FORCE_REFORMAT) {
-    SerialUSB.println(">>> Init: Flash is unreadable or unformatted! Auto initializing...");
-    storage.format_flash();
-  }
-
-  while (1) led.panic();
-
-
-  // Load the INI file into the buffer in the GigaConfig instance
-  GigaStorage::rc rc = storage.load_file(config.config_ini_buffer, &config.config_ini_buffer_length, config.config_ini_filename);
-  if (rc == GigaStorage::rc::NO_ERROR) {
-    SerialUSB.println(">>> Init: Processing INI file.");
-
-    // Parse the INI file and store the values in flash
-    GigaConfig::rc rc_ini = config.load_ini();
-
-    if (rc_ini != GigaConfig::rc::NO_ERROR) {
-      SerialUSB.println(">>> Init: Failed to load INI file!");
-    }
-
-  }
-
   // Setup the configuration subsystem
   config.setup();
+  config.registry_load();
+
+  // You can use Ethernet.init(pin) to configure the CS pin
+  SerialUSB.println(">>> Init: ethernet.");
+  ethernet.setup();
+  ////Ethernet.init(10);  // 10 is the slave select pin
+
+  // initialize the Ethernet device
+  ////Ethernet.begin(mac, ip, myDns, gateway, subnet);
+
+
 
   // Setup the load cell interface 
   // CRITICAL NOTE: This must be done _after_ the Ethernet device setup due to some not-yet-understood
@@ -112,8 +91,8 @@ void setup() {
 //  }
 
   // start listening for clients
-  SerialUSB.println(">>> Init: TCP/IP server.");
-  server.begin();
+  ////SerialUSB.println(">>> Init: TCP/IP server.");
+  ////server.begin();
 
   // Start the timer for emitting messages back to the client(s)
   client_message_timer.start();
@@ -132,7 +111,9 @@ void loop() {
 
   led.heartbeat(!loadcell.connected);
   loadcell.loop();
+  ethernet.loop();
 
+#ifdef zero_ether
   // Check for any new client connecting
   EthernetClient newClient = server.accept();
   if (newClient) {
@@ -165,6 +146,7 @@ void loop() {
       clients[i].stop();
     }
   }
+#endif
 
   // Once a second emit the device status
   if (client_message_timer.done()) {
@@ -175,6 +157,10 @@ void loop() {
     // Build the outbound message
     sprintf(client_buffer, "%08lX;%d;%0lX;%li\n", loop_count, loadcell.connected, loadcell.load, loadcell.load);
   
+    ethernet.send_all(client_buffer);
+  }
+
+#ifdef zero_ether  
     for (byte i = 0; i < 8; i++) {
       if (clients[i] && clients[i].connected()) {
         // Send every connected client the latest load value
@@ -182,5 +168,6 @@ void loop() {
       }
     }
   }
+#endif
 
 }

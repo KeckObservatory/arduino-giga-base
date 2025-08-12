@@ -20,7 +20,7 @@ void GigaStorage::setup() {
 
 // Determine if the flash has been formatted by testing the 1st partition for presence
 // of the "tdb.initialized" key in the registry.
-GigaStorage::rc GigaStorage::test_flash() {
+GigaStorage::rc GigaStorage::flash_test() {
 
   char initialized_text_dest[64];
 
@@ -49,7 +49,7 @@ GigaStorage::rc GigaStorage::test_flash() {
 }
 
 // Reformat the on-board 16MB flash for use with the KVStore/TDBStore library
-GigaStorage::rc GigaStorage::format_flash() {
+GigaStorage::rc GigaStorage::flash_format() {
 
   char initialized_text_dest[64];
   int32_t mbed_err;
@@ -112,7 +112,7 @@ GigaStorage::rc GigaStorage::format_flash() {
  * defined by the initializer in the header file.  All filenames on the drive are therefore prefixed first 
  * by "/usb/".  This routine is typically used for reading the configuration INI file off disk.
  */
-GigaStorage::rc GigaStorage::load_file(char* buffer, uint32_t* buffer_length, const char* filename) {
+GigaStorage::rc GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_length, const char* filename) {
 
   char error_text[128];
 
@@ -197,80 +197,3 @@ GigaStorage::rc GigaStorage::load_file(char* buffer, uint32_t* buffer_length, co
   return GigaStorage::rc::NO_ERROR;
 }
 
-
-
-
-
-
-#ifdef zero
-
-#include "QSPIFBlockDevice.h"
-#include "MBRBlockDevice.h"
-//#include "FATFileSystem.h"
-#include <TDBStore.h>
-
-QSPIFBlockDevice root(QSPI_SO0, QSPI_SO1, QSPI_SO2, QSPI_SO3,  QSPI_SCK, QSPI_CS, QSPIF_POLARITY_MODE_1, 40000000);
-//mbed::MBRBlockDevice ota_data(&root, 2);
-//mbed::MBRBlockDevice user_data(&root, 3);
-//mbed::MBRBlockDevice tdb_data(&root, 1);
-mbed::MBRBlockDevice tdb_data(&root, 4);
-//mbed::FATFileSystem ota_data_fs("fs");
-//mbed::FATFileSystem user_data_fs("user");
-
-//QSPIFBlockDevice root;
-mbed::TDBStore config(&tdb_data);
-
-
-
-const char tdb_EthernetMAC[] = "EthernetMAC";
-const char newmac[] = "0xDEAFBEEF";
-char ethernetMAC[32];
-char mbederr[32];
-uint32_t create_flags = mbed::KVStore::WRITE_ONCE_FLAG;
-
-void setup() {
-  int err;
-  Serial.begin(115200);
-  while (!Serial);
-
-  //mbed::MBRBlockDevice::partition(&root, 2, 0x0B,  1 * 1024 * 1024,  6 * 1024 * 1024);
-  //mbed::MBRBlockDevice::partition(&root, 3, 0x0B,  6 * 1024 * 1024, 10 * 1024 * 1024);
-  //err = mbed::MBRBlockDevice::partition(&root, 1, 0x0B, 0, 14 * 1024 * 1024);
-
-/*
-  if (err != 0) {
-    Serial.print("partition error = ");
-    Serial.println(err);
-    while(1);
-  }
-*/
-  config.init();
-
-/*
-  Serial.print("Setting MAC to ");
-  Serial.println(newmac);
-
-  err = config.set(tdb_EthernetMAC, newmac, sizeof(newmac), create_flags);
-  Serial.print("config.set error = ");
-  Serial.print(err);
-*/
-
-  err = config.get(tdb_EthernetMAC, &ethernetMAC, sizeof(ethernetMAC));
-  sprintf(mbederr, "%X", err);
-  Serial.print("config.get error = ");
-  Serial.println(mbederr);
-
-  Serial.print("MAC = ");
-  Serial.println(ethernetMAC);
-
-  Serial.println();
-  Serial.println("done");
-}
-
-
-
-void loop() {
-
-}
-
-#endif

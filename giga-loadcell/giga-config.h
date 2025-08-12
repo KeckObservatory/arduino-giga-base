@@ -11,11 +11,13 @@
 #include <string.h>
 #include <Arduino_USBHostMbed5.h>
 #include <IPAddress.h>
- #include <Embedded_Template_Library.h>
+#include <Embedded_Template_Library.h>
 #include <etl/unordered_map.h>
 #include <etl/string.h>
 #include <etl/string_utilities.h>
 #include <etl/optional.h>
+
+#include "giga-storage.h"
 
 // Max sizes for various elements
 #define MAX_LENGTH_KEY_VAL  64
@@ -35,6 +37,10 @@ const char registry_cal_placeholder[] = "cal.placeholder";
 
 class GigaConfig {
 private:
+	
+	// Hold a reference to the storage subsystem
+	GigaStorage& storage;
+
   etl::unordered_map<etl::string<MAX_LENGTH_KEY_VAL>, etl::string<MAX_LENGTH_KEY_VAL>, MAX_SIZE_REGISTRY> registry;
 
 public:
@@ -51,12 +57,13 @@ public:
 		UNKNOWN_ERROR,
 	};
 	
-	GigaConfig() : registry() { bzero(config_ini_buffer, sizeof(config_ini_buffer)); config_ini_buffer_length = MAX_SIZE_CONFIG_INI; };
+	GigaConfig(GigaStorage& the_storage) : storage(the_storage), registry() { bzero(config_ini_buffer, sizeof(config_ini_buffer)); config_ini_buffer_length = MAX_SIZE_CONFIG_INI; };
 	~GigaConfig() {};
 
   void setup();
   const char * get_error_text(uint8_t error);
-	GigaConfig::rc load_ini();
+	GigaConfig::rc ini_parse();
+	GigaConfig::rc registry_load();
 
 };
 

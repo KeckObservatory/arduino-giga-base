@@ -22,7 +22,7 @@ This design makes use of these parts.
 1) Arduino GIGA R1 WiFi <https://store-usa.arduino.cc/products/giga-r1-wifi>
 1) DFRobot Ethernet and PoE Shield <https://www.dfrobot.com/product-2370.html>
 1) DFRobot RS485 Shield <https://www.dfrobot.com/product-1024.html>
-1) USB thumb drive formatted for FAT32 (aka MS-DOS)
+1) USB flash drive formatted for FAT32 (aka MS-DOS), no larger than 32GB
 1) PoE injector or switch 
 1) CAT-5e or -6 Ethernet cable
 1) USB-C to PC interface cable
@@ -43,37 +43,65 @@ Source code for this project is located at <https://github.com/KeckObservatory/a
 
     ![alt text](stacking_header_image.png)
 
+1) Connect the load cell to the RS-485 shield via the screw terminals or other connector.
+
 1) Install the Arduino IDE 2.x and the libraries listed above.
+
+1) Download the source code repository from GitHub.
 
 1) Connect the Arduino Giga to the PC with a USB cable.
 
-1) Before using the Giga device with our source code, the internal flash must be partitioned and formatted.  The Arduino library provides an example sketch that is used interactively to do this; it will create 4 partitions: two for use with WiFi, one 1MB key/value store (the part this project needs), and one for user date.  Prepare the device flash by running File > Examples > STM32H747_System > QSPIFormat
- 
-1) Download the source code repository from GitHub.
-
-1) Copy the repository file `config.ini` to your USB thumb drive formatted for FAT32.
+1) Copy the repository file `config.ini` to the root directory of your USB thumb drive, formatted for FAT32.
 
 1) Modify the `config.ini` to have an IP address (and netmask, etc) for the subnet you plan to run it on.  The MAC address will be generated in code based on the uniqe ID in the microprocessor.  See the section on SETTINGS below for details on this file.
 
+1) Insert the USB drive into the Arduino.
+
 1) Open the .ino file for the giga-loadcell in the Arduino IDE.
-
-
 
 1) Compile the project.
 
-1) Upload the project to the Arduino.
+1) Upload the project to the Arduino.  If the loading process seems to stall at the beginning, try double clicking the reset (RST) button on the Giga or one of its shields.
 
-1) Insert the USB drive into the Arduino.
+1) Verify the messages in the Arduino IDE serial monitor display output like this, indicating that flash was formatted and the USB flash drive was detected and read.
+    ```
+    --------------------------------------------------------------------------------
+    14:53:28.161 -> >>> Load cell device initialization start.
+    14:53:28.161 -> >>> Init: ethernet.
+    14:53:28.719 -> >>> Init: storage.
+    14:53:28.752 -> >>> Init: Flash is unreadable or unformatted! Auto initializing...
+    14:53:28.752 -> [STO] Erasing flash.
+    14:53:31.497 -> [STO] Formatting flash: 1 partition, size 1MB.
+    14:53:31.530 -> [STO] Initializing registry.
+    14:53:31.562 -> [STO] Testing registry key retrieval.
+    14:53:31.562 -> [STO] Registry retrieval test success, test key tdb.initialized = 'format 1'
+    14:53:31.825 -> [STO] Trying to connect to USB...
+    14:53:31.924 -> [STO] Trying to connect to USB...
+    14:53:32.022 -> [STO] Trying to connect to USB...
+    14:53:32.126 -> [STO] Trying to connect to USB...
+    14:53:32.286 -> [STO] Trying to connect to USB...
+    14:53:32.386 -> [STO] Trying to connect to USB...
+    14:53:32.584 -> [STO] USB mass storage device is present.
+    14:53:34.331 -> [STO] USB mass storage device mounted.
+    14:53:34.331 -> [STO] File /usb/config.ini found, 1087 bytes.
+    14:53:34.331 -> [STO] File /usb/config.ini loaded.
+    14:53:34.331 -> >>> Init: Processing INI file.
+    14:53:34.331 -> [INI] Parsing configuration file.
+    14:53:34.331 -> [INI]   network.ip -> 10.77.0.210
+    14:53:34.331 -> [INI]   network.netmask -> 255.255.0.0
+    14:53:34.331 -> [INI]   network.gateway -> 10.77.0.1
+    14:53:34.331 -> [INI]   network.dns -> 128.171.1.1
+    14:53:34.331 -> [INI] Configuration file loaded.
+    14:53:34.331 -> >>> Init: load cell.
+    14:53:34.331 -> >>> Init: TCP/IP server.
+    14:53:34.331 -> >>> Initialization complete.
+    ```
 
-1) Press the reset (RST) button on the RS-485 shield.
-
-1) The RGB light on the Giga will briefly flash blue when it loads the settings from the USB drive, then flash green at 1Hz.
-
-1) Remove the USB power cable and the USB drive.
-
-1) Connect the load cell to the RS-485 shield via the screw terminals or other connector.
+1) Disconnect the USB interface cable from the Arduino.
 
 1) Plug the Ethernet cable into the PoE source and into the Giga.
+
+1) Press the reset (RST) button on the RS-485 shield.
 
 1) Verify the device is reporting values by connecting to it over the network.  For example, telnet to it and observe the results:
     ![alt text](telnet_image.png)
@@ -130,10 +158,18 @@ Due to the SPI connection header, the Ethernet shield is the first one attached 
 <u>LED Heartbeat</u>
 <u>USB Disk Configuration</u>
 
-JSON format
+
 
 ## EPICS IOC
 
 ## EPICS Archiver Appliance
 
 ## Grafana
+
+
+## Expansion Notes
+
+<u>On Board Flash</U>
+In the source code giga-storage.cpp, it checks to see if there is a valid KVStore in partition 1 and ensures that a certain key is present.  That key/value store occupies the first 1MB of a 16MB flash device soldred to the Giga R1 board.  This provides plenty of room for expansion to store other types of data.  
+
+The Arduino library provides an example sketch that is used interactively to format the device for use with WiFi and to create a USB mountable user partition.  In the Arduino IDE, inspect the example sketch that is loaded with "File > Examples > STM32H747_System > QSPIFormat".  This is a good example of making other partition types.

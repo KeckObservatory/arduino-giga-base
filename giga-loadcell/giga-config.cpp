@@ -33,7 +33,7 @@ void GigaConfig::setup() {
 }
 
 
-GigaConfig::rc GigaConfig::load_ini() {
+GigaConfig::rc GigaConfig::ini_parse() {
 
   // Verify an INI is loaded into memory
   SerialUSB.println("[INI] Parsing configuration file.");
@@ -100,6 +100,36 @@ GigaConfig::rc GigaConfig::load_ini() {
 
   SerialUSB.println("[INI] Configuration file loaded.");
   return GigaConfig::rc::NO_ERROR;
+}
+
+GigaConfig::rc GigaConfig::registry_load() {
+
+  // Check that the flash is formatted for use
+  GigaStorage::rc err = storage.flash_test();
+  if ((err == GigaStorage::rc::FLASH_UNFORMATTED) || KVSTORE_FORCE_REFORMAT) {
+    SerialUSB.println(">>> Init: Flash is unreadable or unformatted! Auto initializing...");
+    storage.flash_format();
+  }
+
+  // Load the INI file into the buffer in the GigaConfig instance
+  GigaStorage::rc rc = storage.usb_file_load(config_ini_buffer, &config_ini_buffer_length, config_ini_filename);
+
+  if (rc == GigaStorage::rc::NO_ERROR) {
+
+    SerialUSB.println(">>> Init: Processing INI file.");
+
+    // Parse the INI file and store the values in flash
+    GigaConfig::rc rc_ini = ini_parse();
+
+    if (rc_ini != GigaConfig::rc::NO_ERROR) {
+      SerialUSB.println(">>> Init: Failed to load INI file!");
+    }
+  }
 
 
 }
+
+
+
+
+

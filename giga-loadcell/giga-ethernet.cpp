@@ -16,23 +16,39 @@ void GigaEthernet::setup() {
   // Build a unique MAC address.  Get the low 3 bytes hashed from the STM32 unique identifier.
   // The high 3 bytes of the MAC are ASCII 'W' 'M' and 'K' which is 57:4D:4B, not assigned to any vendor as of July 2025.
   uint32_t low_mac = GetUIDtoMAC();
-  uint8_t mac[6] = {WMKO_OUI_0, WMKO_OUI_1, WMKO_OUI_2, 0, 0, 0};
+  uint8_t mac[6] = {WIZNET_OUI_0, WIZNET_OUI_1, WIZNET_OUI_2, 0, 0, 1};
+
   mac[3] = (low_mac >> 2) & 0xFF;
   mac[4] = (low_mac >> 1) & 0xFF;
   mac[5] = (low_mac     ) & 0xFF;
 
   // Get the IP address out of flash memory.  
-
-IPAddress ip(10, 77, 0, 210);
-IPAddress myDns(8, 8, 8, 8);
-IPAddress gateway(10, 77, 0, 1);
-IPAddress subnet(255, 255, 0, 0);
-
+  IPAddress ip(10, 77, 0, 210);
+  IPAddress myDns(8, 8, 8, 8);
+  IPAddress gateway(10, 77, 0, 1);
+  IPAddress subnet(255, 255, 0, 0);
 
   // initialize the Ethernet device
   Ethernet.begin(mac, ip, myDns, gateway, subnet);
 
+  // Check for Ethernet hardware present
+  if (Ethernet.hardwareStatus() == EthernetNoHardware) {
+    SerialUSB.println("[ETH] Ethernet hardware is not present!");
+    return;
+
+    //while (true) {
+    //  led.panic();
+    //}
+  }
+
+  if (Ethernet.linkStatus() == LinkOFF) {
+    SerialUSB.println("[ETH] Ethernet cable is not connected.");
+  }
+
   
+  // start listening for clients
+  SerialUSB.println("[ETH] Starting TCP/IP server.");
+  server.begin();
 
 
 }
@@ -41,6 +57,60 @@ void GigaEthernet::clear() {
 
 
 }
+
+void GigaEthernet::loop() {
+  volatile char dummy;
+
+  // Check for any new client connecting
+  EthernetClient newClient = server.accept();
+  if (newClient) {
+    for (byte i = 0; i < 8; i++) {
+      if (!clients[i]) {
+
+        // TESTING: print a line indicating which client has connected, not used in production
+        //newClient.print("This is client number ");
+        //newClient.println(i);
+
+        // Once we "accept", the client is no longer tracked by EthernetServer
+        // so we must store it into our list of clients
+        clients[i] = newClient;
+        break;
+      }
+    }
+  }
+
+  // Check for incoming data from all clients and throw it away, as it is not needed
+  for (byte i = 0; i < 8; i++) {
+    while (clients[i] && clients[i].available() > 0) {
+      // read incoming data from the client into a variable but do nothing with it
+      dummy = clients[i].read();
+    }
+  }
+
+  // stop any clients which disconnect
+  for (byte i = 0; i < 8; i++) {
+    if (clients[i] && !clients[i].connected()) {
+      clients[i].stop();
+    }
+  }
+
+
+
+
+}
+
+
+void GigaEthernet::send_all(char *buf) {
+
+  for (byte i = 0; i < 8; i++) {
+    if (clients[i] && clients[i].connected()) {
+      // Send every connected client the latest load value
+      clients[i].print(buf);
+    }
+  }
+
+}
+
 
 #ifdef zero
 
