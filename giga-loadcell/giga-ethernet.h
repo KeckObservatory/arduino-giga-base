@@ -21,7 +21,7 @@
 // Well known ports
 #define ETHERNET_LISTEN_PORT 23
 
-// Use the Wiznet OUI since it's a Wiznet W5500 device on the board
+// Use the Wiznet OUI since it's a Wiznet W5500 device on the board, see https://standards-oui.ieee.org/
 #define WIZNET_OUI_0 0x00
 #define WIZNET_OUI_1 0x08
 #define WIZNET_OUI_2 0xDC
@@ -53,7 +53,6 @@ class GigaEthernet {
     GigaEthernet(GigaConfig& the_config) : config(the_config), server(ETHERNET_LISTEN_PORT) {}
 
     void setup();
-    void clear();
     void loop();
     void send_all(char *buf);
 

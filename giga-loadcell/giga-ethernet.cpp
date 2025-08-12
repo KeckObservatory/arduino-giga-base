@@ -14,10 +14,9 @@ void GigaEthernet::setup() {
   Ethernet.init(10);
 
   // Build a unique MAC address.  Get the low 3 bytes hashed from the STM32 unique identifier.
-  // The high 3 bytes of the MAC are ASCII 'W' 'M' and 'K' which is 57:4D:4B, not assigned to any vendor as of July 2025.
-  uint32_t low_mac = GetUIDtoMAC();
   uint8_t mac[6] = {WIZNET_OUI_0, WIZNET_OUI_1, WIZNET_OUI_2, 0, 0, 1};
 
+  uint32_t low_mac = GetUIDtoMAC();
   mac[3] = (low_mac >> 2) & 0xFF;
   mac[4] = (low_mac >> 1) & 0xFF;
   mac[5] = (low_mac     ) & 0xFF;
@@ -53,23 +52,17 @@ void GigaEthernet::setup() {
 
 }
 
-void GigaEthernet::clear() {
-
-
-}
-
 void GigaEthernet::loop() {
-  volatile char dummy;
+
+  // This value is never actually used but we need it to consume any data coming from the clients,
+  // which are ignored for the load cell implementation.
+  volatile char __attribute__((unused)) dummy;
 
   // Check for any new client connecting
   EthernetClient newClient = server.accept();
   if (newClient) {
     for (byte i = 0; i < 8; i++) {
       if (!clients[i]) {
-
-        // TESTING: print a line indicating which client has connected, not used in production
-        //newClient.print("This is client number ");
-        //newClient.println(i);
 
         // Once we "accept", the client is no longer tracked by EthernetServer
         // so we must store it into our list of clients
@@ -82,6 +75,7 @@ void GigaEthernet::loop() {
   // Check for incoming data from all clients and throw it away, as it is not needed
   for (byte i = 0; i < 8; i++) {
     while (clients[i] && clients[i].available() > 0) {
+
       // read incoming data from the client into a variable but do nothing with it
       dummy = clients[i].read();
     }
@@ -93,9 +87,6 @@ void GigaEthernet::loop() {
       clients[i].stop();
     }
   }
-
-
-
 
 }
 
@@ -110,25 +101,6 @@ void GigaEthernet::send_all(char *buf) {
   }
 
 }
-
-
-#ifdef zero
-
-byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEE };
-IPAddress ip(10, 77, 0, 210);
-IPAddress myDns(8, 8, 8, 8);
-IPAddress gateway(10, 77, 0, 1);
-IPAddress subnet(255, 255, 0, 0);
-
-
-// telnet defaults to port 23
-EthernetServer server(23);
-EthernetClient clients[8];
-bool alreadyConnected = false; // whether or not the client was connected previously
-
-
-#endif
-
 
 
 /* ************************************************************************** */
