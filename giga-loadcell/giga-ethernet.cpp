@@ -9,9 +9,15 @@
 
 void GigaEthernet::setup() {
 
+  char log_buf[96];
 
   // Ethernet.init(pin) configures the CS pin, which in this case is 10
   Ethernet.init(10);
+
+  // To start the Ethernet interface, we need a MAC address as well as the usual TCP/IP 
+  // components such as the IP address, netmask, and gateway.  DNS is not strictly needed
+  // here (because we are not making outbound connections) but the API calls for some value
+  // so we will use a reasonable default that ought to always work: Google at 8.8.8.8
 
   // Build a unique MAC address.  Get the low 3 bytes hashed from the STM32 unique identifier.
   uint8_t mac[6] = {WIZNET_OUI_0, WIZNET_OUI_1, WIZNET_OUI_2, 0, 0, 1};
@@ -21,14 +27,50 @@ void GigaEthernet::setup() {
   mac[4] = (low_mac >> 1) & 0xFF;
   mac[5] = (low_mac     ) & 0xFF;
 
-  // Get the IP address out of flash memory.  
-  IPAddress ip(10, 77, 0, 210);
-  IPAddress myDns(8, 8, 8, 8);
-  IPAddress gateway(10, 77, 0, 1);
-  IPAddress subnet(255, 255, 0, 0);
+  // Get the IP address from the registry, which will either get it directly from flash, or from
+  // a USB flash drive that is inserted.
+  IPAddress ip("10.77.0.210");
+  IPAddress dns("8.8.8.8");
+  IPAddress gateway("10.77.0.1");
+  IPAddress netmask("255.255.0.0");
+
+  //etl::string<MAX_LENGTH_KEY_VAL> ip2("10.77.0.210");
+
+  // Get the IP address out of the registry
+  //etl::pair<GigaConfig::rc, etl::string<MAX_LENGTH_KEY_VAL>> 
+  auto registry_ip = config.registry_get(registry_net_ip);
+  if (registry_ip.first == GigaConfig::rc::NO_ERROR) {
+    SerialUSB.println(">>>>> success finding registry_net_ip");
+  }
+
+  auto registry_cal = config.registry_get(registry_cal_placeholder);
+  if (registry_cal.first == GigaConfig::rc::NO_ERROR) {
+    SerialUSB.println("success found registry_cal_placeholder");
+  } else {
+    SerialUSB.println(">>>>> failed to find registry_cal_placeholder");
+  }
+
+  
+
+#ifdef zero
+  etl::string<MAX_LENGTH_KEY_VAL> registry_ip = config.registry_get(registry_net_ip);
+  etl::string<MAX_LENGTH_KEY_VAL> registry_netmask = config.registry_get(registry_net_netmask);
+  etl::string<MAX_LENGTH_KEY_VAL> registry_gateway = config.registry_get(registry_net_gateway);
+  etl::string<MAX_LENGTH_KEY_VAL> registry_dns = config.registry_get(registry_net_dns);
+  sprintf(log_buf, "[ETH] Configuring IP address %s (netmask %s, gateway %s, dns %s)", registry_ip.c_str(), registry_netmask.c_str(), registry_gateway.c_str(), registry_dns.c_str());
+  SerialUSB.println(log_buf);
+#endif
+
+#ifdef zero
+  // Convert to IP address instances
+  IPAddress ip(registry_ip.c_str());
+  IPAddress netmask(registry_netmask.c_str());
+  IPAddress gateway(registry_gateway.c_str());
+  IPAddress dns(registry_dns.c_str());
+#endif 
 
   // initialize the Ethernet device
-  Ethernet.begin(mac, ip, myDns, gateway, subnet);
+  Ethernet.begin(mac, ip, dns, gateway, netmask);
 
   // Check for Ethernet hardware present
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {

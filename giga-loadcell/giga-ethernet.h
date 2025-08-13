@@ -18,7 +18,7 @@
 #include "timing.h"
 #include "giga-config.h"
 
-// Well known ports
+// Use standard telnet port 23 since the protocol is human readable
 #define ETHERNET_LISTEN_PORT 23
 
 // Use the Wiznet OUI since it's a Wiznet W5500 device on the board, see https://standards-oui.ieee.org/
@@ -32,12 +32,11 @@ class GigaEthernet {
   	// Hold a reference to the config subsystem
 	  GigaConfig& config;
 
-    // telnet defaults to port 23
+    // One server and multiple possible clients, even if only one is expected to be used at a time
     EthernetServer server;
     EthernetClient clients[8];
 
-
-    // Magic numbers for 32-bit hashing
+    // Magic numbers for 32-bit hashing, used in the MAC address routines below
     const uint32_t c1 = 0xcc9e2d51;
     const uint32_t c2 = 0x1b873593;
 

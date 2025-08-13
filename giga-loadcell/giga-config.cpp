@@ -36,7 +36,7 @@ void GigaConfig::setup() {
 GigaConfig::rc GigaConfig::ini_parse() {
 
   // Verify an INI is loaded into memory
-  SerialUSB.println("[INI] Parsing configuration file.");
+  SerialUSB.println("[CFG] Parsing configuration file.");
 
   using String     = etl::string<MAX_LENGTH_KEY_VAL>;
   using StringView = etl::string_view;
@@ -86,19 +86,24 @@ GigaConfig::rc GigaConfig::ini_parse() {
       etl::trim_whitespace(key);
       etl::trim_whitespace(val);
 
-      SerialUSB.print("[INI]   ");
+      SerialUSB.print("[CFG]   ");
       SerialUSB.print(key.c_str());
       SerialUSB.print(" -> ");
       SerialUSB.println(val.c_str());
+
+      // Convert into a pair then insert into the registry 
+      auto kv_pair = etl::make_pair(key, val);
+      registry.insert(kv_pair);
+
     } else {
-      SerialUSB.print("[INI] Unparsable line: '");
+      SerialUSB.print("[CFG] Unparsable line: '");
       SerialUSB.print(line.c_str());
       SerialUSB.println("'");
     }
 
   }
 
-  SerialUSB.println("[INI] Configuration file loaded.");
+  SerialUSB.println("[CFG] Configuration file loaded.");
   return GigaConfig::rc::NO_ERROR;
 }
 
@@ -107,7 +112,7 @@ GigaConfig::rc GigaConfig::registry_load() {
   // Check that the flash is formatted for use
   GigaStorage::rc err = storage.flash_test();
   if ((err == GigaStorage::rc::FLASH_UNFORMATTED) || KVSTORE_FORCE_REFORMAT) {
-    SerialUSB.println(">>> Init: Flash is unreadable or unformatted! Auto initializing...");
+    SerialUSB.println("[CFG] Flash is unreadable or unformatted! Auto initializing...");
     storage.flash_format();
   }
 
@@ -116,16 +121,48 @@ GigaConfig::rc GigaConfig::registry_load() {
 
   if (rc == GigaStorage::rc::NO_ERROR) {
 
-    SerialUSB.println(">>> Init: Processing INI file.");
+    SerialUSB.println("[CFG] Processing INI file.");
 
     // Parse the INI file and store the values in flash
     GigaConfig::rc rc_ini = ini_parse();
 
     if (rc_ini != GigaConfig::rc::NO_ERROR) {
-      SerialUSB.println(">>> Init: Failed to load INI file!");
+      SerialUSB.println("[CFG] Failed to load INI file!");
     }
   }
 
+  return GigaConfig::rc::NO_ERROR;
+}
+
+
+// Retrieve a registry value that corresponds to a desired key (string)
+//etl::string<MAX_LENGTH_KEY_VAL> GigaConfig::registry_get(const char key[]) {
+std::pair<GigaConfig::rc, etl::string<MAX_LENGTH_KEY_VAL>> GigaConfig::registry_get(const char key[]) {
+
+  SerialUSB.print("[CFG] Locating registry key: ");
+  SerialUSB.println(key);
+
+  auto key_wrapper = etl::string<MAX_LENGTH_KEY_VAL>(key);
+
+  if (registry.contains(key_wrapper)) {
+
+    auto it = registry.find(key_wrapper);
+    if (it != registry.end()) {
+        SerialUSB.print("Found kv_pair: ");
+        SerialUSB.print(it->first.c_str());
+        SerialUSB.print(" = ");
+        SerialUSB.println(it->second.c_str());
+
+        std::pair<GigaConfig::rc, etl::string<MAX_LENGTH_KEY_VAL>> get_rc(NO_ERROR, it->second);
+        return(get_rc);
+        //return(it->second);
+    } 
+
+  } else {
+    SerialUSB.println("Not found!");
+    std::pair<GigaConfig::rc, etl::string<MAX_LENGTH_KEY_VAL>> get_rc(REGISTRY_KEY_NOT_FOUND, NULL);
+    return(get_rc);
+  }
 
 }
 

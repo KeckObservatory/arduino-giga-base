@@ -55,6 +55,7 @@ public:
 		CONFIG_FILE_NOT_FOUND,
     CONFIG_FILE_TOO_LARGE,
 		UNKNOWN_ERROR,
+		REGISTRY_KEY_NOT_FOUND
 	};
 	
 	GigaConfig(GigaStorage& the_storage) : storage(the_storage), registry() { bzero(config_ini_buffer, sizeof(config_ini_buffer)); config_ini_buffer_length = MAX_SIZE_CONFIG_INI; };
@@ -64,6 +65,9 @@ public:
   const char * get_error_text(uint8_t error);
 	GigaConfig::rc ini_parse();
 	GigaConfig::rc registry_load();
+
+	std::pair<GigaConfig::rc, etl::string<MAX_LENGTH_KEY_VAL>> registry_get(const char key[]);
+	//etl::string<MAX_LENGTH_KEY_VAL> registry_get(const char key[]);
 
 };
 
