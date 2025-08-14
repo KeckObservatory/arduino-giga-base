@@ -14,6 +14,7 @@
 #include <SPI.h>
 #include <Ethernet.h>
 
+#include "giga-types.h"
 #include "giga-led.h"  
 #include "giga-ethernet.h"  
 #include "giga-storage.h"

@@ -17,10 +17,10 @@
 #include <etl/string_utilities.h>
 #include <etl/optional.h>
 
+#include "giga-types.h"
 #include "giga-storage.h"
 
 // Max sizes for various elements
-#define MAX_LENGTH_KEY_VAL  64
 #define MAX_LENGTH_INI_LINE 128
 #define MAX_SIZE_REGISTRY   64
 #define MAX_SIZE_CONFIG_INI 16384
@@ -41,7 +41,8 @@ private:
 	// Hold a reference to the storage subsystem
 	GigaStorage& storage;
 
-  etl::unordered_map<etl::string<MAX_LENGTH_KEY_VAL>, etl::string<MAX_LENGTH_KEY_VAL>, MAX_SIZE_REGISTRY> registry;
+  // Instantiate the system registry
+	GigaRegistry<MAX_SIZE_REGISTRY> registry;
 
 public:
 	static const char config_ini_filename[];
@@ -50,7 +51,7 @@ public:
 	char config_ini_buffer[MAX_SIZE_CONFIG_INI];
 	uint32_t config_ini_buffer_length;
 
-	enum rc {
+	enum rc : uint8_t {
 		NO_ERROR = 0,
 		CONFIG_FILE_NOT_FOUND,
     CONFIG_FILE_TOO_LARGE,
@@ -65,9 +66,7 @@ public:
   const char * get_error_text(uint8_t error);
 	GigaConfig::rc ini_parse();
 	GigaConfig::rc registry_load();
-
-	std::pair<GigaConfig::rc, etl::string<MAX_LENGTH_KEY_VAL>> registry_get(const char key[]);
-	//etl::string<MAX_LENGTH_KEY_VAL> registry_get(const char key[]);
+	KVStringRC registry_get(const char key[]);
 
 };
 

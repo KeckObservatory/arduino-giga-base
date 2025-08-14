@@ -12,23 +12,21 @@ const char GigaConfig::config_ini_filename[] = CONFIG_INI_FILENAME;
 
 void GigaConfig::setup() {
 
-  etl::string<MAX_LENGTH_KEY_VAL> s1 = registry_net_ip;
-  etl::string<MAX_LENGTH_KEY_VAL> s2 = "10.77.0.210";
+  KVString s1 = registry_net_ip;
+  KVString s2 = "10.77.0.210";
   auto s1s2 = etl::make_pair(s1, s2);
 
-  etl::string<MAX_LENGTH_KEY_VAL> s3 = registry_net_netmask;
-  etl::string<MAX_LENGTH_KEY_VAL> s4 = "255.255.0.0";
+  KVString s3 = registry_net_netmask;
+  KVString s4 = "255.255.0.0";
   auto s3s4 = etl::make_pair(s3, s4);
 
   registry.insert(s1s2);
   registry.insert(s3s4);
 
-  for (const std::pair<etl::string<MAX_LENGTH_KEY_VAL>, etl::string<MAX_LENGTH_KEY_VAL>>& n : registry) {
+  for (const std::pair<KVString, KVString>& n : registry) {
     Serial.println(n.first.c_str());
     Serial.println(n.second.c_str());
   }
-
-
 
 }
 
@@ -38,20 +36,15 @@ GigaConfig::rc GigaConfig::ini_parse() {
   // Verify an INI is loaded into memory
   SerialUSB.println("[CFG] Parsing configuration file.");
 
-  using String     = etl::string<MAX_LENGTH_KEY_VAL>;
+  //using String     = etl::string<MAX_LENGTH_KEY_VAL>;
   using StringView = etl::string_view;
-  using Vector     = etl::vector<String, MAX_SIZE_REGISTRY>;
+  using Vector     = etl::vector<KVString, MAX_SIZE_REGISTRY>;
   using Token      = etl::optional<StringView>;
 
   // Connect a string to an external buffer, using the length of the file read from disk
   etl::string_ext ini_text(config_ini_buffer, config_ini_buffer, config_ini_buffer_length);
   Vector tokens;
   Token token; 
-
-  //token = etl::get_token(ini_text, "\n", token, true);
-  //SerialUSB.print("Token: ");
-  //etl::string<128> v(token.value().begin(), token.value().end()); 
-  //SerialUSB.println(v.c_str());
 
   // Iterate each line (separated by a newline character)
   while (token = etl::get_token(ini_text, "\n", token, true)) {
@@ -136,34 +129,31 @@ GigaConfig::rc GigaConfig::registry_load() {
 
 
 // Retrieve a registry value that corresponds to a desired key (string)
-//etl::string<MAX_LENGTH_KEY_VAL> GigaConfig::registry_get(const char key[]) {
-std::pair<GigaConfig::rc, etl::string<MAX_LENGTH_KEY_VAL>> GigaConfig::registry_get(const char key[]) {
-
+KVStringRC GigaConfig::registry_get(const char key[]) {
+  
   SerialUSB.print("[CFG] Locating registry key: ");
   SerialUSB.println(key);
 
-  auto key_wrapper = etl::string<MAX_LENGTH_KEY_VAL>(key);
+  auto key_wrapper = KVString(key);
 
   if (registry.contains(key_wrapper)) {
 
     auto it = registry.find(key_wrapper);
     if (it != registry.end()) {
-        SerialUSB.print("Found kv_pair: ");
+        SerialUSB.print("[CFG] Found kv_pair: ");
         SerialUSB.print(it->first.c_str());
         SerialUSB.print(" = ");
         SerialUSB.println(it->second.c_str());
 
-        std::pair<GigaConfig::rc, etl::string<MAX_LENGTH_KEY_VAL>> get_rc(NO_ERROR, it->second);
+        KVStringRC get_rc(NO_ERROR, it->second);
         return(get_rc);
-        //return(it->second);
     } 
+  } 
 
-  } else {
-    SerialUSB.println("Not found!");
-    std::pair<GigaConfig::rc, etl::string<MAX_LENGTH_KEY_VAL>> get_rc(REGISTRY_KEY_NOT_FOUND, NULL);
-    return(get_rc);
-  }
-
+  // Key was not found in the registry
+  SerialUSB.println("[CFG] Not found!");
+  KVStringRC get_rc(REGISTRY_KEY_NOT_FOUND, NULL);
+  return(get_rc);
 }
 
 

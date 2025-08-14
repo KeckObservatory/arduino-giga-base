@@ -23,6 +23,7 @@
 #include <TDBStore.h>
 #include <FATFileSystem.h>
 
+#include "giga-types.h"
 #include "timing.h"
 
 // The key/value storage partition was created when formatting the device previously with this code.
@@ -55,7 +56,7 @@ class GigaStorage {
     uint32_t registry_create_flags = mbed::KVStore::WRITE_ONCE_FLAG;
 
   public:
-    enum rc {
+    enum rc : uint8_t {
         NO_ERROR = 0,
         NO_DEVICE,
         NOT_MOUNTABLE,

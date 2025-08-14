@@ -34,10 +34,9 @@ void GigaEthernet::setup() {
   IPAddress gateway("10.77.0.1");
   IPAddress netmask("255.255.0.0");
 
-  //etl::string<MAX_LENGTH_KEY_VAL> ip2("10.77.0.210");
+  //KVString ip2("10.77.0.210");
 
   // Get the IP address out of the registry
-  //etl::pair<GigaConfig::rc, etl::string<MAX_LENGTH_KEY_VAL>> 
   auto registry_ip = config.registry_get(registry_net_ip);
   if (registry_ip.first == GigaConfig::rc::NO_ERROR) {
     SerialUSB.println(">>>>> success finding registry_net_ip");
@@ -53,10 +52,10 @@ void GigaEthernet::setup() {
   
 
 #ifdef zero
-  etl::string<MAX_LENGTH_KEY_VAL> registry_ip = config.registry_get(registry_net_ip);
-  etl::string<MAX_LENGTH_KEY_VAL> registry_netmask = config.registry_get(registry_net_netmask);
-  etl::string<MAX_LENGTH_KEY_VAL> registry_gateway = config.registry_get(registry_net_gateway);
-  etl::string<MAX_LENGTH_KEY_VAL> registry_dns = config.registry_get(registry_net_dns);
+  KVString registry_ip = config.registry_get(registry_net_ip);
+  KVString registry_netmask = config.registry_get(registry_net_netmask);
+  KVString registry_gateway = config.registry_get(registry_net_gateway);
+  KVString registry_dns = config.registry_get(registry_net_dns);
   sprintf(log_buf, "[ETH] Configuring IP address %s (netmask %s, gateway %s, dns %s)", registry_ip.c_str(), registry_netmask.c_str(), registry_gateway.c_str(), registry_dns.c_str());
   SerialUSB.println(log_buf);
 #endif
