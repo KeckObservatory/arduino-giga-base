@@ -30,20 +30,18 @@ void GigaConfig::setup() {
 
 }
 
-
+// Parse an INI file that is already loaded into a buffer in memory
 GigaConfig::rc GigaConfig::ini_parse() {
 
   // Verify an INI is loaded into memory
   SerialUSB.println("[CFG] Parsing configuration file.");
 
-  //using String     = etl::string<MAX_LENGTH_KEY_VAL>;
   using StringView = etl::string_view;
-  using Vector     = etl::vector<KVString, MAX_SIZE_REGISTRY>;
   using Token      = etl::optional<StringView>;
 
   // Connect a string to an external buffer, using the length of the file read from disk
   etl::string_ext ini_text(config_ini_buffer, config_ini_buffer, config_ini_buffer_length);
-  Vector tokens;
+  KVVector<MAX_SIZE_REGISTRY> tokens;
   Token token; 
 
   // Iterate each line (separated by a newline character)
@@ -100,29 +98,59 @@ GigaConfig::rc GigaConfig::ini_parse() {
   return GigaConfig::rc::NO_ERROR;
 }
 
+// Load the registry values from USB flash drive (if one is attached) and other keys from the
+// on-board flash.  This allows, for example, a user to insert a USB flash drive to update
+// load cell calibrations and retain the existing TCP/IP settings, without knowing the TCP/IP
+// addresses beforehand.
 GigaConfig::rc GigaConfig::registry_load() {
 
-  // Check that the flash is formatted for use
-  GigaStorage::rc err = storage.flash_test();
-  if ((err == GigaStorage::rc::FLASH_UNFORMATTED) || KVSTORE_FORCE_REFORMAT) {
+  // Check that the flash is formatted for use.  If not, format it now.
+  GigaStorage::rc_flash err = storage.flash_test();
+  if ((err == GigaStorage::rc_flash::FLASH_UNFORMATTED) || KVSTORE_FORCE_REFORMAT) {
     SerialUSB.println("[CFG] Flash is unreadable or unformatted! Auto initializing...");
     storage.flash_format();
   }
 
-  // Load the INI file into the buffer in the GigaConfig instance
-  GigaStorage::rc rc = storage.usb_file_load(config_ini_buffer, &config_ini_buffer_length, config_ini_filename);
+  // Load the INI file into the buffer in this GigaConfig instance
+  GigaStorage::rc_usb rc_usb = storage.usb_file_load(config_ini_buffer, &config_ini_buffer_length, config_ini_filename);
 
-  if (rc == GigaStorage::rc::NO_ERROR) {
+  switch (rc_usb) {
 
-    SerialUSB.println("[CFG] Processing INI file.");
-
-    // Parse the INI file and store the values in flash
-    GigaConfig::rc rc_ini = ini_parse();
-
-    if (rc_ini != GigaConfig::rc::NO_ERROR) {
-      SerialUSB.println("[CFG] Failed to load INI file!");
+    case GigaStorage::rc_usb::NO_DEVICE: {
+      SerialUSB.println("[CFG] No USB flash device present to load an INI file from.");
+      break;
     }
+
+    case GigaStorage::rc_usb::NOT_MOUNTABLE:
+    case GigaStorage::rc_usb::NO_FILE:
+    case GigaStorage::rc_usb::FILE_TOO_LARGE:
+    case GigaStorage::rc_usb::FILE_NOT_READ: {
+      SerialUSB.println("[CFG] Failure to read USB flash device or config.ini file.");
+      break;
+    }
+
+    case GigaStorage::rc_usb::USB_NO_ERROR: {
+      SerialUSB.println("[CFG] Processing INI file on USB flash device.");
+    
+      // Parse the INI file and store the values in flash
+      GigaConfig::rc rc_ini = ini_parse();
+
+      if (rc_ini != GigaConfig::rc::NO_ERROR) {
+        SerialUSB.println("[CFG] Failed to load INI file!");
+      }
+      break;
+    }
+
+    default: {
+      SerialUSB.print("[CFG] Unknown return code from storage.usb_file_load() = ");
+      SerialUSB.println(rc_usb);
+      break;
+    }
+
   }
+
+  // 
+
 
   return GigaConfig::rc::NO_ERROR;
 }
@@ -156,6 +184,13 @@ KVStringRC GigaConfig::registry_get(const char key[]) {
   return(get_rc);
 }
 
+// Synchronize the registry in memory with the copy in flash
+GigaConfig::rc GigaConfig::registry_flash_sync() {
+
+  // If there are no keys 
+
+
+}
 
 
 

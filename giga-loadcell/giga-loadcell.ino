@@ -48,6 +48,7 @@ void setup() {
   storage.setup();
 
   // Setup the configuration subsystem
+  SerialUSB.println(">>> Init: registry.");
   config.setup();
   config.registry_load();
 

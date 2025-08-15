@@ -20,7 +20,7 @@ void GigaStorage::setup() {
 
 // Determine if the flash has been formatted by testing the 1st partition for presence
 // of the "tdb.initialized" key in the registry.
-GigaStorage::rc GigaStorage::flash_test() {
+GigaStorage::rc_flash GigaStorage::flash_test() {
 
   char initialized_text_dest[64];
 
@@ -36,7 +36,7 @@ GigaStorage::rc GigaStorage::flash_test() {
     Serial.print("[STO] registry_store.get error = ");
     Serial.println(mbed_err_hex_text);
 
-    return GigaStorage::rc::FLASH_UNFORMATTED;
+    return GigaStorage::rc_flash::FLASH_UNFORMATTED;
   }
 
   Serial.print("[STO] Flash registry is valid, test key ");
@@ -45,11 +45,11 @@ GigaStorage::rc GigaStorage::flash_test() {
   Serial.print(initialized_text_dest);
   Serial.println("'");
   
-  return GigaStorage::rc::NO_ERROR;
+  return GigaStorage::rc_flash::FLASH_NO_ERROR;
 }
 
 // Reformat the on-board 16MB flash for use with the KVStore/TDBStore library
-GigaStorage::rc GigaStorage::flash_format() {
+GigaStorage::rc_flash GigaStorage::flash_format() {
 
   char initialized_text_dest[64];
   int32_t mbed_err;
@@ -81,7 +81,7 @@ GigaStorage::rc GigaStorage::flash_format() {
     Serial.print("[STO] registry_store.set error = ");
     Serial.println(mbed_err_hex_text);
 
-    return GigaStorage::rc::FLASH_FORMAT_FAILURE;
+    return GigaStorage::rc_flash::FLASH_FORMAT_FAILURE;
   }
 
   SerialUSB.println("[STO] Testing registry key retrieval.");
@@ -94,7 +94,7 @@ GigaStorage::rc GigaStorage::flash_format() {
     Serial.print("[STO] registry_store.get error = ");
     Serial.println(mbed_err_hex_text);
 
-    return GigaStorage::rc::FLASH_FORMAT_FAILURE;
+    return GigaStorage::rc_flash::FLASH_FORMAT_FAILURE;
   }
 
   // Print the contents of the key
@@ -104,7 +104,7 @@ GigaStorage::rc GigaStorage::flash_format() {
   Serial.print(initialized_text_dest);
   Serial.println("'");
 
-  return GigaStorage::rc::NO_ERROR;
+  return GigaStorage::rc_flash::FLASH_NO_ERROR;
 }
 
 /* Load a file from the USB flash drive into memory.  The destination buffer is provided, as is the length, 
@@ -112,7 +112,7 @@ GigaStorage::rc GigaStorage::flash_format() {
  * defined by the initializer in the header file.  All filenames on the drive are therefore prefixed first 
  * by "/usb/".  This routine is typically used for reading the configuration INI file off disk.
  */
-GigaStorage::rc GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_length, const char* filename) {
+GigaStorage::rc_usb GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_length, const char* filename) {
 
   char error_text[128];
 
@@ -135,7 +135,7 @@ GigaStorage::rc GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_length
     Serial.println("[STO] USB mass storage device is present.");
   } else {
     Serial.println("[STO] No USB mass storage device detected.");
-    return GigaStorage::rc::NO_DEVICE;
+    return GigaStorage::rc_usb::NO_DEVICE;
   }
 
   // A device is present.  Determine if it can be mounted.
@@ -143,7 +143,7 @@ GigaStorage::rc GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_length
   if (err) {
     Serial.print("[STO] Error mounting USB mass storage device: ");
     Serial.println(err);
-    return GigaStorage::rc::NOT_MOUNTABLE;
+    return GigaStorage::rc_usb::NOT_MOUNTABLE;
   } else {
     Serial.println("[STO] USB mass storage device mounted.");
   }
@@ -154,7 +154,7 @@ GigaStorage::rc GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_length
   if (!file) {
     sprintf(error_text, "[STO] File %s cannot be opened on USB mass storage device, errno = %d", filename, errno);
     Serial.println(error_text);
-    return GigaStorage::rc::NO_FILE;
+    return GigaStorage::rc_usb::NO_FILE;
   }
 
   // Determine the size of the file, such that we can determine if it will fit in the buffer.  
@@ -168,7 +168,7 @@ GigaStorage::rc GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_length
     sprintf(error_text, "[STO] File %s too large (%ld bytes) for internal buffer (%ld bytes).", filename, file_size, *buffer_length);
     Serial.println(error_text);
     fclose(file);
-    return GigaStorage::rc::FILE_TOO_LARGE;
+    return GigaStorage::rc_usb::FILE_TOO_LARGE;
   } else {
     sprintf(error_text, "[STO] File %s found, %ld bytes.", filename, file_size);
     Serial.println(error_text);
@@ -182,7 +182,7 @@ GigaStorage::rc GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_length
   if (bytes_read != file_size) {
     sprintf(error_text, "[STO] File %s not fully read: %ld bytes loaded of %ld bytes total.", filename, bytes_read, file_size);
     Serial.println(error_text);
-    return GigaStorage::rc::FILE_NOT_READ;
+    return GigaStorage::rc_usb::FILE_NOT_READ;
   } 
 
   // Done with file handle.
@@ -194,6 +194,6 @@ GigaStorage::rc GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_length
   // Return the buffer to the user.
   sprintf(error_text, "[STO] File %s loaded.", filename);
   Serial.println(error_text);
-  return GigaStorage::rc::NO_ERROR;
+  return GigaStorage::rc_usb::USB_NO_ERROR;
 }
 

@@ -56,13 +56,17 @@ class GigaStorage {
     uint32_t registry_create_flags = mbed::KVStore::WRITE_ONCE_FLAG;
 
   public:
-    enum rc : uint8_t {
-        NO_ERROR = 0,
+    enum rc_usb : uint8_t {
+        USB_NO_ERROR = 0,
         NO_DEVICE,
         NOT_MOUNTABLE,
         NO_FILE,
         FILE_TOO_LARGE,
-        FILE_NOT_READ,
+        FILE_NOT_READ
+    };
+
+    enum rc_flash : uint8_t {
+        FLASH_NO_ERROR = 0,
         FLASH_UNFORMATTED,
         FLASH_FORMAT_FAILURE
     };
@@ -75,9 +79,9 @@ class GigaStorage {
                     {}
 
     void setup();
-    GigaStorage::rc flash_test();
-    GigaStorage::rc flash_format();
-    GigaStorage::rc usb_file_load(char* buffer, uint32_t* buffer_length, const char* filename);
+    GigaStorage::rc_flash flash_test();
+    GigaStorage::rc_flash flash_format();
+    GigaStorage::rc_usb usb_file_load(char* buffer, uint32_t* buffer_length, const char* filename);
 
 };
 
