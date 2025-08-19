@@ -54,8 +54,9 @@ class GigaStorage {
     mbed::MBRBlockDevice tdb_data;
 
   public:
-    //uint32_t registry_create_flags = mbed::KVStore::WRITE_ONCE_FLAG;
-    uint32_t registry_create_flags = 0;
+    // The registry creation takes a flag, use 0 for re-writable keys and WRITE_ONCE_FLAG if it needs to be immutable.
+    uint32_t registry_create_flag = 0;
+    uint32_t registry_create_flag_immutable = mbed::KVStore::WRITE_ONCE_FLAG;
 
     mbed::TDBStore registry_store;
 

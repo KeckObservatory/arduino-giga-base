@@ -23,12 +23,13 @@ void GigaStorage::setup() {
 GigaStorage::rc_flash GigaStorage::flash_test() {
 
   char initialized_text_dest[MAX_LENGTH_KV];
+  size_t retrieved_length;
 
   int32_t mbed_err;
   char mbed_err_hex_text[32];
 
   // Retrieve the registry key
-  mbed_err = registry_store.get(registry_tdb_initialized, &initialized_text_dest, sizeof(initialized_text_dest));
+  mbed_err = registry_store.get(registry_tdb_initialized, &initialized_text_dest, sizeof(initialized_text_dest), &retrieved_length);
   
   // If the key retrieve fails, we have to assume this device is not formatted properly for this firmware
   if (mbed_err != 0) {
@@ -73,7 +74,7 @@ GigaStorage::rc_flash GigaStorage::flash_format() {
   registry_store.init();
 
   // Set the key that indicates flash is setup properly
-  mbed_err = registry_store.set(registry_tdb_initialized, registry_tdb_initialized_text, sizeof(registry_tdb_initialized_text), registry_create_flags);
+  mbed_err = registry_store.set(registry_tdb_initialized, registry_tdb_initialized_text, sizeof(registry_tdb_initialized_text), registry_create_flag);
   
   // If the key set fails, assume flash formatting did not work and bail out now
   if (mbed_err != 0) {

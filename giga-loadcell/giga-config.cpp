@@ -121,22 +121,35 @@ GigaConfig::rc GigaConfig::registry_load() {
 
     case GigaStorage::rc_usb::NO_DEVICE:
       {
-        SerialUSB.println("[CFG] No USB flash device present to load an INI file from.");
+        SerialUSB.println("[CFG] No USB flash drive present to load an INI file from.");
         break;
       }
 
     case GigaStorage::rc_usb::NOT_MOUNTABLE:
+      {
+        SerialUSB.println("[CFG] This USB flash drive is not mountable.  It must be no larger than 32GB, and formatted for FAT32.");
+        break;
+      }
+
     case GigaStorage::rc_usb::NO_FILE:
+      {
+        sprintf(message_text, "[CFG] USB flash drive does not contain a file named '%s' to load settings from.", config_ini_filename);
+        SerialUSB.println(message_text);
+        break;
+      }
+
     case GigaStorage::rc_usb::FILE_TOO_LARGE:
     case GigaStorage::rc_usb::FILE_NOT_READ:
       {
-        SerialUSB.println("[CFG] Failure to read USB flash device or config.ini file.");
+        sprintf(message_text, "[CFG] File '%s' on USB flash drive is too large or cannot be read into a buffer.", config_ini_filename);
+        SerialUSB.println(message_text);
         break;
       }
 
     case GigaStorage::rc_usb::USB_NO_ERROR:
       {
-        SerialUSB.println("[CFG] Processing INI file on USB flash device.");
+        sprintf(message_text, "[CFG] Processing configuration file '%s' on USB flash drive.", config_ini_filename);
+        SerialUSB.println(message_text);
 
         // An INI file was present and successfully loaded into memory.  Parse the file contents
         // and store the values in the registry.
@@ -150,8 +163,8 @@ GigaConfig::rc GigaConfig::registry_load() {
 
     default:
       {
-        SerialUSB.print("[CFG] Unknown return code from storage.usb_file_load() = ");
-        SerialUSB.println(rc_usb);
+        sprintf(message_text, "[CFG] Unknown return code from storage.usb_file_load() = %d", rc_usb);
+        SerialUSB.println(message_text);
         break;
       }
   }
@@ -180,7 +193,7 @@ GigaConfig::rc GigaConfig::registry_load() {
       sprintf(message_text, "[CFG] Key %s not found in registry, creating it with '%s'.", key.c_str(), value.c_str());
       SerialUSB.println(message_text);
 
-      mbed_err = storage.registry_store.set(key.c_str(), value.c_str(), strlen(value.c_str()), storage.registry_create_flags);
+      mbed_err = storage.registry_store.set(key.c_str(), value.c_str(), strlen(value.c_str()), storage.registry_create_flag);
 
       if (mbed_err != 0) {
 
@@ -201,7 +214,7 @@ GigaConfig::rc GigaConfig::registry_load() {
         sprintf(message_text, "[CFG] Key %s found in registry (len %d), value update: %s -> %s", key.c_str(), retrieved_length, stored_value, value.c_str());
         SerialUSB.println(message_text);
 
-        mbed_err = storage.registry_store.set(key.c_str(), value.c_str(), strlen(value.c_str()), storage.registry_create_flags);
+        mbed_err = storage.registry_store.set(key.c_str(), value.c_str(), strlen(value.c_str()), storage.registry_create_flag);
         if (mbed_err != 0) {
 
           sprintf(message_text, "[CFG] storage.registry_store.set failed!");
