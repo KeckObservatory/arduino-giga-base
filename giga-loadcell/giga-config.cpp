@@ -103,7 +103,7 @@ GigaConfig::rc GigaConfig::ini_parse() {
 // the TCP/IP addresses beforehand.
 GigaConfig::rc GigaConfig::registry_load() {
 
-  char message_text[64];
+  char message_text[128];
   int32_t mbed_err;
 
   // Check that the flash storage is formatted for use.  If not, format it now.
@@ -249,6 +249,25 @@ GigaConfig::rc GigaConfig::registry_load() {
   // When a key is not present in the registry, attempt to load it from flash storage.  If it
   // is not present in flash storage then return with a failure such that the program will halt
   // and display a panic pattern on the LEDs.
+  for (const auto& key : registry_required_keys) {
+
+    // Is this key in the registry?
+    KVStringRC s = registry_get(key);
+
+    if (s.first != NO_ERROR) {
+
+      sprintf(message_text, "[CFG] MISSING REGISTRY ENTRY: %s not present in registry!", key);
+      SerialUSB.println(message_text);
+      return GigaConfig::rc::REGISTRY_INCOMPLETE;
+    }
+
+
+  }
+  
+
+
+
+
 
   SerialUSB.println("[CFG] Registry load complete.");
 
@@ -259,33 +278,18 @@ GigaConfig::rc GigaConfig::registry_load() {
 // Retrieve a registry value that corresponds to a desired key (string)
 KVStringRC GigaConfig::registry_get(const char key[]) {
 
-  SerialUSB.print("[CFG] Locating registry key: ");
-  SerialUSB.println(key);
-
   auto key_wrapper = KVString(key);
 
   if (registry.contains(key_wrapper)) {
 
     auto it = registry.find(key_wrapper);
     if (it != registry.end()) {
-      SerialUSB.print("[CFG] Found kv_pair: ");
-      SerialUSB.print(it->first.c_str());
-      SerialUSB.print(" = ");
-      SerialUSB.println(it->second.c_str());
-
       KVStringRC get_rc(NO_ERROR, it->second);
       return (get_rc);
     }
   }
 
   // Key was not found in the registry
-  SerialUSB.println("[CFG] Not found!");
   KVStringRC get_rc(REGISTRY_KEY_NOT_FOUND, NULL);
   return (get_rc);
-}
-
-// Synchronize the registry in memory with the copy in flash
-GigaConfig::rc GigaConfig::registry_flash_sync() {
-
-  // If there are no keys
 }

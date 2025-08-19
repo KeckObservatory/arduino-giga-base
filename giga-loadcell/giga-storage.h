@@ -40,7 +40,7 @@
 // Define this to 1 during development/testing to force a reformat of the flash
 #define KVSTORE_FORCE_REFORMAT        0
 
-// Define registry keys for use with flash init
+// Define a registry key for use with flash init
 const char registry_tdb_initialized[] = "tdb.initialized";
 const char registry_tdb_initialized_text[] = "format 1";  // Indicates the registry format version, for future use
 

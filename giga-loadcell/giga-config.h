@@ -36,10 +36,7 @@ const char registry_net_dns[]         = "net.dns";
 const char registry_cal_placeholder[] = "cal.placeholder";
 
 // Define which keys _must_ exist in the registry (and therefore flash) for normal operation
-#define REGISTRY_REQUIRED_KEYS { registry_net_ip, registry_net_netmask, registry_net_gateway, registry_net_dns }
-
-//const auto registry_keys = { registry_net_ip, registry_net_netmask, registry_net_gateway, registry_net_dns };
-//const std::initializer_list<const char *> registry_keys2 = { registry_net_ip, registry_net_netmask, registry_net_gateway, registry_net_dns };
+#define REGISTRY_REQUIRED_KEYS { registry_tdb_initialized, registry_net_ip, registry_net_netmask, registry_net_gateway, registry_net_dns }
 
 class GigaConfig {
 private:
@@ -67,6 +64,7 @@ public:
     CONFIG_FILE_TOO_LARGE,
 		UNKNOWN_ERROR,
 		REGISTRY_KEY_NOT_FOUND,
+		REGISTRY_INCOMPLETE,
 		FLASH_STORAGE_FAILURE
 	};
 	
@@ -84,7 +82,6 @@ public:
 	GigaConfig::rc ini_parse();
 	GigaConfig::rc registry_load();
 	KVStringRC registry_get(const char key[]);
-	GigaConfig::rc registry_flash_sync();
 
 };
 

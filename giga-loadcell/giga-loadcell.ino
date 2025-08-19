@@ -30,7 +30,6 @@ Loadcell loadcell;
 
 Timer client_message_timer(100);
 
-
 void setup() {
 
   // Hold off on setup for two seconds to allow the USB port to connect to the PC, if one is present
@@ -39,6 +38,10 @@ void setup() {
   SerialUSB.println("");
   SerialUSB.println("--------------------------------------------------------------------------------");
   SerialUSB.println(">>> Load cell device initialization start.");
+
+  auto ver = __cplusplus;
+  SerialUSB.print(">>> Built with C++ version: ");  
+  SerialUSB.println(ver);
 
   // Setup RGB LED subsystem
   led.setup();
