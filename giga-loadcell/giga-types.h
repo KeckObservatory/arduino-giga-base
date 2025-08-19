@@ -22,7 +22,10 @@
 // A string for use as either a key or value, that is no longer than 64 chars
 using KVString = etl::string<MAX_LENGTH_KV>;
 
-// A key-value pair that also has a return code with it, for use when returning from
+// A key-value pair made from our string constuct
+using KVStringPair = etl::pair<KVString, KVString>;
+
+// A string that also has a return code with it, for use when returning from
 // functions that might fail to locate/create the desired string.  If the enumerations
 // for the return code are declared as uint8_t, this will allow returning a KVStringRC
 // with enum values!
@@ -48,3 +51,18 @@ using GigaRegistryRequiredKeys = const std::initializer_list<const char *>;
 
 
 #endif
+
+
+
+#ifdef comment_section
+
+/**
+ * @brief Thing.
+ *
+ * @param[in]  foo                  The foo.
+ * @param[in]  foo_size             Size of foo.
+ *
+ * @returns 0 for success, 1 for failure
+ */
+
+ #endif

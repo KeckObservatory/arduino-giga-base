@@ -84,7 +84,7 @@ class GigaStorage {
                     {}
 
     void setup();
-    GigaStorage::rc_flash flash_test();
+    GigaStorage::rc_flash flash_init();
     GigaStorage::rc_flash flash_format();
     GigaStorage::rc_usb usb_file_load(char* buffer, uint32_t* buffer_length, const char* filename);
     void print_mbed_error(int32_t mbed_err);

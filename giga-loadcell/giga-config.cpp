@@ -10,6 +10,12 @@
 // Assign values to the const strings in the class
 const char GigaConfig::config_ini_filename[] = CONFIG_INI_FILENAME;
 
+/******************************************************************************************************************************
+ * @brief Initialize the configuration registry subsystem.  This will load any keys in flash memory into the registry, which
+ *        is the typical usage of the system.  The USB flash drive is intended for loading new keys into the device, but it 
+ *        can be safely left plugged in indefinitely without causing any flash wear.  Note: GigaStorage::setup() must occur 
+ *        before this can be called.
+ ******************************************************************************************************************************/
 void GigaConfig::setup() {
 
   int32_t mbed_err;
@@ -25,7 +31,7 @@ void GigaConfig::setup() {
   SerialUSB.println("[CFG] Preloading registry with values from flash.");
   bzero(key, MAX_LENGTH_KV);
 
-  // Iterate the keys
+  // Iterate the keys in the registry_store
   mbed_err = storage.registry_store.iterator_open(&iterator, NULL);
   while (storage.registry_store.iterator_next(iterator, key, MAX_LENGTH_KV) != MBED_ERROR_ITEM_NOT_FOUND) {
 
@@ -41,7 +47,7 @@ void GigaConfig::setup() {
       // Add the key/value to the in-memory registry but skip the mbed reserved key
       if (strcmp(key, registry_tdb_reserved) != 0) {
 
-        registry.insert(etl::make_pair(key, value));
+        registry.insert(KVStringPair(key, value));
       }
 
     } else {
@@ -61,7 +67,11 @@ void GigaConfig::setup() {
   SerialUSB.println("[CFG] Registry preload complete."); 
 }
 
-// Parse an INI file that is already loaded into a buffer in memory
+/******************************************************************************************************************************
+ * @brief Parse an INI file that is already loaded into a buffer in memory.
+ *
+ * @returns NO_ERROR when complete (does not abort processing due to errors)
+ ******************************************************************************************************************************/
 GigaConfig::rc GigaConfig::ini_parse() {
 
   // Verify an INI is loaded into memory
@@ -114,9 +124,14 @@ GigaConfig::rc GigaConfig::ini_parse() {
       SerialUSB.print(" -> ");
       SerialUSB.println(val.c_str());
 
-      // Convert into a pair then insert into the registry
-      auto kv_pair = etl::make_pair(key, val);
-      registry.insert(kv_pair);
+      // This key might already be in the registry because it was loaded from flash.  Erase it before putting 
+      // the (possibly) updated value into the registry.
+      if (registry.contains(key)) {
+        registry.erase(key);
+      } 
+
+      // Convert into a pair (which is how they are stored in the registry) and insert it.
+      registry.insert(KVStringPair(key, val));
 
     } else {
       SerialUSB.print("[CFG] Unparsable line: '");
@@ -129,17 +144,22 @@ GigaConfig::rc GigaConfig::ini_parse() {
   return GigaConfig::rc::NO_ERROR;
 }
 
-// Load the registry values from USB flash drive (if one is attached) and other keys from the
-// on-board flash.  This allows, for example, a user to insert a USB flash drive to update
-// load cell calibrations and retain the existing TCP/IP settings, without having to know
-// the TCP/IP addresses beforehand.
+/******************************************************************************************************************************
+ * @brief Load the registry values from USB flash drive (if one is attached) and other keys from the on-board flash.  This 
+ *        allows, for example, a user to insert a USB flash drive to update load cell calibrations and retain the existing 
+ *        TCP/IP settings, without having to know the TCP/IP addresses beforehand.
+ *
+ * @returns NO_ERROR for success.
+ *          FLASH_STORAGE_FAILURE for all flash interface failure conditions.
+ *          REGISTRY_INCOMPLETE if a required configuration key/value pair is missing (fatal).
+ ******************************************************************************************************************************/
 GigaConfig::rc GigaConfig::registry_load() {
 
   char message_text[128];
   int32_t mbed_err;
 
-  // Check the USB mass storage subsystem for the presence of a USB flash drive.  If it is present,
-  // attempt to load an INI file into the buffer in this GigaConfig instance.
+  // Check the USB mass storage subsystem for the presence of a USB flash drive.  If it is present, attempt to load an INI file 
+  // into a buffer in this GigaConfig instance.
   GigaStorage::rc_usb rc_usb = storage.usb_file_load(config_ini_buffer, &config_ini_buffer_length, config_ini_filename);
 
   switch (rc_usb) {
@@ -194,11 +214,11 @@ GigaConfig::rc GigaConfig::registry_load() {
       }
   }
 
-  // The in-memory registry is now either empty, or loaded from values on the USB flash drive.
+  // The in-memory registry is now a combination of values loaded from the on-board flash and those contained in the INI file 
+  // on a USB flash drive.  The INI file values take precedence and would have over-written values loaded from flash.
 
-  // Iterate through each value in the registry and see if it's in the flash storage.  Entries
-  // not in storage, or with values that differ from what is in storage, must now be written
-  // to storage.
+  // Iterate through each value in the registry and see if it's in the flash storage.  Entries not in storage, or with values 
+  // that differ from what is in storage, must now be written back to flash.
 
   sprintf(message_text, "[CFG] Synchronizing registry with flash, total %d keys.", registry.size());
   SerialUSB.println(message_text);
@@ -275,10 +295,10 @@ GigaConfig::rc GigaConfig::registry_load() {
     }
   }
 
-  // Iterate through each value that is required by this project for use elsewhere in the code.
-  // When a key is not present in the registry, attempt to load it from flash storage.  If it
-  // is not present in flash storage then return with a failure such that the program will halt
-  // and display a panic pattern on the LEDs.
+  // Iterate through each value that is required by this project for use elsewhere in the code.  For all keys not present in 
+  // the registry, print them out and return with a failure such that the program will halt and display a panic pattern on the 
+  // LEDs.
+  uint16_t missing_keys = 0;
   for (const auto& key : registry_required_keys) {
 
     // Is this key in the registry?
@@ -286,26 +306,32 @@ GigaConfig::rc GigaConfig::registry_load() {
 
     if (s.first != NO_ERROR) {
 
-      
-
-
       sprintf(message_text, "[CFG] MISSING REGISTRY ENTRY: %s not present in registry!", key);
       SerialUSB.println(message_text);
-      return GigaConfig::rc::REGISTRY_INCOMPLETE;
+
+      missing_keys++;
     }
   }
+
+  if (missing_keys > 0) {
+      sprintf(message_text, "***** INCOMPLETE REGISTRY - %d KEYS MISSING! *****", missing_keys);
+      SerialUSB.println(message_text);
+      return GigaConfig::rc::REGISTRY_INCOMPLETE;
+  }
   
-
-
-
-
   SerialUSB.println("[CFG] Registry load complete.");
-
   return GigaConfig::rc::NO_ERROR;
 }
 
 
-// Retrieve a registry value that corresponds to a desired key (string)
+/******************************************************************************************************************************
+ * @brief Retrieve a registry value that corresponds to a desired key (string).
+ *
+ * @param[in]  key                  The key to retrieve.
+ *
+ * @returns NO_ERROR+value for success locating the key.
+ *          REGISTRY_KEY_NOT_FOUND+NULL for failure to locate the key.
+ ******************************************************************************************************************************/
 KVStringRC GigaConfig::registry_get(const char key[]) {
 
   auto key_wrapper = KVString(key);

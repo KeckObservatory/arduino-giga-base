@@ -8,6 +8,9 @@
 #include "giga-storage.h"
 using namespace mbed;
 
+/******************************************************************************************************************************
+ * @brief Setup the storage subsystem.
+ ******************************************************************************************************************************/
 void GigaStorage::setup() {
 
   // Enable the USB-A port
@@ -18,7 +21,7 @@ void GigaStorage::setup() {
   registry_store.init();
 
   // Check that the flash storage is formatted for use.  If not, format it now.
-  rc_flash err = flash_test();
+  rc_flash err = flash_init();
   if ((err == rc_flash::FLASH_UNFORMATTED) || KVSTORE_FORCE_REFORMAT) {
     SerialUSB.println("[STO] Flash is unreadable or unformatted! Auto initializing...");
     flash_format();
@@ -26,9 +29,14 @@ void GigaStorage::setup() {
 
 }
 
-// Determine if the flash has been formatted by testing the 1st partition for presence
-// of the "tdb.initialized" key in the registry.
-GigaStorage::rc_flash GigaStorage::flash_test() {
+/******************************************************************************************************************************
+ * @brief Determine if the flash has been formatted by testing the 1st partition for presence of the "tdb.initialized" key in 
+ *        the registry; if the key is not accessible, attempt to format the flash partition for usage.
+ *
+ * @returns FLASH_NO_ERROR for success accessing the registry
+ *          FLASH_UNFORMATTED for when flash is not yet formatted
+ ******************************************************************************************************************************/
+GigaStorage::rc_flash GigaStorage::flash_init() {
 
   char initialized_text_dest[MAX_LENGTH_KV];
   size_t retrieved_length;
@@ -57,7 +65,12 @@ GigaStorage::rc_flash GigaStorage::flash_test() {
   return GigaStorage::rc_flash::FLASH_NO_ERROR;
 }
 
-// Reformat the on-board 16MB flash for use with the KVStore/TDBStore library
+/******************************************************************************************************************************
+ * @brief Reformat the on-board 16MB flash for use with the KVStore/TDBStore library.
+ *
+ * @returns FLASH_NO_ERROR for success
+ *          FLASH_FORMAT_FAILURE for failure to format the flash partition
+ ******************************************************************************************************************************/
 GigaStorage::rc_flash GigaStorage::flash_format() {
 
   char initialized_text_dest[64];
@@ -116,11 +129,23 @@ GigaStorage::rc_flash GigaStorage::flash_format() {
   return GigaStorage::rc_flash::FLASH_NO_ERROR;
 }
 
-/* Load a file from the USB flash drive into memory.  The destination buffer is provided, as is the length, 
- * and a filename to load from.  The mbed library mounts the flash drive under the path "/usb" which is 
- * defined by the initializer in the header file.  All filenames on the drive are therefore prefixed first 
- * by "/usb/".  This routine is typically used for reading the configuration INI file off disk.
- */
+/******************************************************************************************************************************
+ * @brief Load a file from the USB flash drive into memory.  The destination buffer is provided, as is the length, and a 
+ *        filename to load from.  The mbed library mounts the flash drive under the path "/usb" which is defined by the 
+ *        initializer in the header file.  All filenames on the drive are therefore prefixed first by "/usb/".  This routine 
+ *        is typically used for reading the configuration INI file off disk.
+ *
+ * @param[out] buffer              Pointer to a buffer to copy the file into.
+ * @param[in]  buffer_length       Max size of the buffer.
+ * @param[in]  filename            Filename to load.
+ *
+ * @returns USB_NO_ERROR           Success: file loaded into the buffer.
+ *          NO_DEVICE              Failure: no USB flash drive is inserted.
+ *          NOT_MOUNTABLE          Failure: could not mount the flash drive (filesystem type probably wrong)
+ *          NO_FILE                Failure: no config.ini file on the drive.
+ *          FILE_TOO_LARGE         Failure: file larget that 16KBytes, won't fit.
+ *          FILE_NOT_READ          Failure: unable to read the file for some reason.
+ ******************************************************************************************************************************/
 GigaStorage::rc_usb GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_length, const char* filename) {
 
   char error_text[128];
@@ -206,7 +231,11 @@ GigaStorage::rc_usb GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_le
   return GigaStorage::rc_usb::USB_NO_ERROR;
 }
 
-
+/******************************************************************************************************************************
+ * @brief Translate the error codes from the MBED library into human readable text, and print it.
+ *
+ * @param[in]  mbed_err               The error code returned from an MBED call.
+ ******************************************************************************************************************************/
 void GigaStorage::print_mbed_error(int32_t mbed_err) {
 
   char message_text[64];
