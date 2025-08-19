@@ -22,6 +22,7 @@
 #include <MBRBlockDevice.h>
 #include <TDBStore.h>
 #include <FATFileSystem.h>
+#include <mbed_error.h>
 
 #include "giga-types.h"
 #include "timing.h"
@@ -51,11 +52,13 @@ class GigaStorage {
 
     QSPIFBlockDevice block_device;
     mbed::MBRBlockDevice tdb_data;
-    mbed::TDBStore registry_store;
-
-    uint32_t registry_create_flags = mbed::KVStore::WRITE_ONCE_FLAG;
 
   public:
+    //uint32_t registry_create_flags = mbed::KVStore::WRITE_ONCE_FLAG;
+    uint32_t registry_create_flags = 0;
+
+    mbed::TDBStore registry_store;
+
     enum rc_usb : uint8_t {
         USB_NO_ERROR = 0,
         NO_DEVICE,
@@ -82,6 +85,7 @@ class GigaStorage {
     GigaStorage::rc_flash flash_test();
     GigaStorage::rc_flash flash_format();
     GigaStorage::rc_usb usb_file_load(char* buffer, uint32_t* buffer_length, const char* filename);
+    void print_mbed_error(int32_t mbed_err);
 
 };
 

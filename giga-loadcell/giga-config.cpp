@@ -24,10 +24,9 @@ void GigaConfig::setup() {
   registry.insert(s3s4);
 
   for (const std::pair<KVString, KVString>& n : registry) {
-    Serial.println(n.first.c_str());
-    Serial.println(n.second.c_str());
+    SerialUSB.println(n.first.c_str());
+    SerialUSB.println(n.second.c_str());
   }
-
 }
 
 // Parse an INI file that is already loaded into a buffer in memory
@@ -36,19 +35,20 @@ GigaConfig::rc GigaConfig::ini_parse() {
   // Verify an INI is loaded into memory
   SerialUSB.println("[CFG] Parsing configuration file.");
 
+  // Declare some simpler names for use with this routine.
   using StringView = etl::string_view;
-  using Token      = etl::optional<StringView>;
+  using Token = etl::optional<StringView>;
 
   // Connect a string to an external buffer, using the length of the file read from disk
   etl::string_ext ini_text(config_ini_buffer, config_ini_buffer, config_ini_buffer_length);
   KVVector<MAX_SIZE_REGISTRY> tokens;
-  Token token; 
+  Token token;
 
   // Iterate each line (separated by a newline character)
   while (token = etl::get_token(ini_text, "\n", token, true)) {
 
     // Convert the token into an etl::string so we can work on it
-    etl::string<MAX_LENGTH_INI_LINE> line(token.value().begin(), token.value().end()); 
+    etl::string<MAX_LENGTH_INI_LINE> line(token.value().begin(), token.value().end());
 
     // Remove whitespace from both ends of line
     etl::trim_whitespace(line);
@@ -72,8 +72,8 @@ GigaConfig::rc GigaConfig::ini_parse() {
     if (pair.size() == 2) {
 
       // Extract the key and value then trim
-      etl::string<MAX_LENGTH_INI_LINE> key(pair.at(0).begin(), pair.at(0).end()); 
-      etl::string<MAX_LENGTH_INI_LINE> val(pair.at(1).begin(), pair.at(1).end()); 
+      etl::string<MAX_LENGTH_INI_LINE> key(pair.at(0).begin(), pair.at(0).end());
+      etl::string<MAX_LENGTH_INI_LINE> val(pair.at(1).begin(), pair.at(1).end());
       etl::trim_whitespace(key);
       etl::trim_whitespace(val);
 
@@ -82,7 +82,7 @@ GigaConfig::rc GigaConfig::ini_parse() {
       SerialUSB.print(" -> ");
       SerialUSB.println(val.c_str());
 
-      // Convert into a pair then insert into the registry 
+      // Convert into a pair then insert into the registry
       auto kv_pair = etl::make_pair(key, val);
       registry.insert(kv_pair);
 
@@ -91,7 +91,6 @@ GigaConfig::rc GigaConfig::ini_parse() {
       SerialUSB.print(line.c_str());
       SerialUSB.println("'");
     }
-
   }
 
   SerialUSB.println("[CFG] Configuration file loaded.");
@@ -100,57 +99,145 @@ GigaConfig::rc GigaConfig::ini_parse() {
 
 // Load the registry values from USB flash drive (if one is attached) and other keys from the
 // on-board flash.  This allows, for example, a user to insert a USB flash drive to update
-// load cell calibrations and retain the existing TCP/IP settings, without knowing the TCP/IP
-// addresses beforehand.
+// load cell calibrations and retain the existing TCP/IP settings, without having to know
+// the TCP/IP addresses beforehand.
 GigaConfig::rc GigaConfig::registry_load() {
 
-  // Check that the flash is formatted for use.  If not, format it now.
+  char message_text[64];
+  int32_t mbed_err;
+
+  // Check that the flash storage is formatted for use.  If not, format it now.
   GigaStorage::rc_flash err = storage.flash_test();
   if ((err == GigaStorage::rc_flash::FLASH_UNFORMATTED) || KVSTORE_FORCE_REFORMAT) {
     SerialUSB.println("[CFG] Flash is unreadable or unformatted! Auto initializing...");
     storage.flash_format();
   }
 
-  // Load the INI file into the buffer in this GigaConfig instance
+  // Check the USB mass storage subsystem for the presence of a USB flash drive.  If it is present,
+  // attempt to load an INI file into the buffer in this GigaConfig instance.
   GigaStorage::rc_usb rc_usb = storage.usb_file_load(config_ini_buffer, &config_ini_buffer_length, config_ini_filename);
 
   switch (rc_usb) {
 
-    case GigaStorage::rc_usb::NO_DEVICE: {
-      SerialUSB.println("[CFG] No USB flash device present to load an INI file from.");
-      break;
-    }
+    case GigaStorage::rc_usb::NO_DEVICE:
+      {
+        SerialUSB.println("[CFG] No USB flash device present to load an INI file from.");
+        break;
+      }
 
     case GigaStorage::rc_usb::NOT_MOUNTABLE:
     case GigaStorage::rc_usb::NO_FILE:
     case GigaStorage::rc_usb::FILE_TOO_LARGE:
-    case GigaStorage::rc_usb::FILE_NOT_READ: {
-      SerialUSB.println("[CFG] Failure to read USB flash device or config.ini file.");
-      break;
-    }
-
-    case GigaStorage::rc_usb::USB_NO_ERROR: {
-      SerialUSB.println("[CFG] Processing INI file on USB flash device.");
-    
-      // Parse the INI file and store the values in flash
-      GigaConfig::rc rc_ini = ini_parse();
-
-      if (rc_ini != GigaConfig::rc::NO_ERROR) {
-        SerialUSB.println("[CFG] Failed to load INI file!");
+    case GigaStorage::rc_usb::FILE_NOT_READ:
+      {
+        SerialUSB.println("[CFG] Failure to read USB flash device or config.ini file.");
+        break;
       }
-      break;
-    }
 
-    default: {
-      SerialUSB.print("[CFG] Unknown return code from storage.usb_file_load() = ");
-      SerialUSB.println(rc_usb);
-      break;
-    }
+    case GigaStorage::rc_usb::USB_NO_ERROR:
+      {
+        SerialUSB.println("[CFG] Processing INI file on USB flash device.");
 
+        // An INI file was present and successfully loaded into memory.  Parse the file contents
+        // and store the values in the registry.
+        GigaConfig::rc rc_ini = ini_parse();
+
+        if (rc_ini != GigaConfig::rc::NO_ERROR) {
+          SerialUSB.println("[CFG] Failed to load INI file!");
+        }
+        break;
+      }
+
+    default:
+      {
+        SerialUSB.print("[CFG] Unknown return code from storage.usb_file_load() = ");
+        SerialUSB.println(rc_usb);
+        break;
+      }
   }
 
-  // 
+  // The in-memory registry is now either empty, or loaded from values on the USB flash drive.
 
+  // Iterate through each value in the registry and see if it's in the flash storage.  Entries
+  // not in storage, or with values that differ from what is in storage, must now be written
+  // to storage.
+
+  sprintf(message_text, "[CFG] Synchronizing registry with flash, total %d keys.", registry.size());
+  SerialUSB.println(message_text);
+
+  char stored_value[MAX_LENGTH_KV];
+  size_t retrieved_length;
+
+  for (const auto& [key, value] : registry) {
+
+    // Check the flash for this key
+    bzero(stored_value, MAX_LENGTH_KV);
+    mbed_err = storage.registry_store.get(key.c_str(), stored_value, sizeof(stored_value), &retrieved_length);
+  
+    // If the key retrieve fails, the key is not present, so write it!
+    if (mbed_err == MBED_ERROR_ITEM_NOT_FOUND) {
+
+      sprintf(message_text, "[CFG] Key %s not found in registry, creating it with '%s'.", key.c_str(), value.c_str());
+      SerialUSB.println(message_text);
+
+      mbed_err = storage.registry_store.set(key.c_str(), value.c_str(), strlen(value.c_str()), storage.registry_create_flags);
+
+      if (mbed_err != 0) {
+
+        sprintf(message_text, "[CFG] storage.registry_store.set failed!");
+        SerialUSB.println(message_text);
+
+        storage.print_mbed_error(mbed_err);
+
+        SerialUSB.println("***** FLASH STORAGE FAILURE *****");
+        return GigaConfig::rc::FLASH_STORAGE_FAILURE;
+      }
+
+    } else if (mbed_err == MBED_SUCCESS) {
+
+      // Found the key, does it need updating?
+      if (strcmp(value.c_str(), stored_value) > 0) {
+
+        sprintf(message_text, "[CFG] Key %s found in registry (len %d), value update: %s -> %s", key.c_str(), retrieved_length, stored_value, value.c_str());
+        SerialUSB.println(message_text);
+
+        mbed_err = storage.registry_store.set(key.c_str(), value.c_str(), strlen(value.c_str()), storage.registry_create_flags);
+        if (mbed_err != 0) {
+
+          sprintf(message_text, "[CFG] storage.registry_store.set failed!");
+          SerialUSB.println(message_text);
+
+          storage.print_mbed_error(mbed_err);
+          
+          SerialUSB.println("***** FLASH STORAGE FAILURE *****");
+          return GigaConfig::rc::FLASH_STORAGE_FAILURE;
+        }
+
+      } else {
+
+        sprintf(message_text, "[CFG] Key %s found in registry (%s), no update required.", key.c_str(), value.c_str());
+        SerialUSB.println(message_text);
+      }
+
+    } else {
+
+      sprintf(message_text, "[CFG] storage.registry_store.get failed!");
+      SerialUSB.println(message_text);
+
+      storage.print_mbed_error(mbed_err);
+
+      SerialUSB.println("***** FLASH STORAGE FAILURE *****");
+      return GigaConfig::rc::FLASH_STORAGE_FAILURE;
+
+    }
+  }
+
+  // Iterate through each value that is required by this project for use elsewhere in the code.
+  // When a key is not present in the registry, attempt to load it from flash storage.  If it
+  // is not present in flash storage then return with a failure such that the program will halt
+  // and display a panic pattern on the LEDs.
+
+  SerialUSB.println("[CFG] Registry load complete.");
 
   return GigaConfig::rc::NO_ERROR;
 }
@@ -158,7 +245,7 @@ GigaConfig::rc GigaConfig::registry_load() {
 
 // Retrieve a registry value that corresponds to a desired key (string)
 KVStringRC GigaConfig::registry_get(const char key[]) {
-  
+
   SerialUSB.print("[CFG] Locating registry key: ");
   SerialUSB.println(key);
 
@@ -168,30 +255,24 @@ KVStringRC GigaConfig::registry_get(const char key[]) {
 
     auto it = registry.find(key_wrapper);
     if (it != registry.end()) {
-        SerialUSB.print("[CFG] Found kv_pair: ");
-        SerialUSB.print(it->first.c_str());
-        SerialUSB.print(" = ");
-        SerialUSB.println(it->second.c_str());
+      SerialUSB.print("[CFG] Found kv_pair: ");
+      SerialUSB.print(it->first.c_str());
+      SerialUSB.print(" = ");
+      SerialUSB.println(it->second.c_str());
 
-        KVStringRC get_rc(NO_ERROR, it->second);
-        return(get_rc);
-    } 
-  } 
+      KVStringRC get_rc(NO_ERROR, it->second);
+      return (get_rc);
+    }
+  }
 
   // Key was not found in the registry
   SerialUSB.println("[CFG] Not found!");
   KVStringRC get_rc(REGISTRY_KEY_NOT_FOUND, NULL);
-  return(get_rc);
+  return (get_rc);
 }
 
 // Synchronize the registry in memory with the copy in flash
 GigaConfig::rc GigaConfig::registry_flash_sync() {
 
-  // If there are no keys 
-
-
+  // If there are no keys
 }
-
-
-
-

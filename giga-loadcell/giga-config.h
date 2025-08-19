@@ -66,7 +66,8 @@ public:
 		CONFIG_FILE_NOT_FOUND,
     CONFIG_FILE_TOO_LARGE,
 		UNKNOWN_ERROR,
-		REGISTRY_KEY_NOT_FOUND
+		REGISTRY_KEY_NOT_FOUND,
+		FLASH_STORAGE_FAILURE
 	};
 	
 	GigaConfig(GigaStorage& the_storage) : storage(the_storage), 

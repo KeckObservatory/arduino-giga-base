@@ -22,7 +22,7 @@ void GigaStorage::setup() {
 // of the "tdb.initialized" key in the registry.
 GigaStorage::rc_flash GigaStorage::flash_test() {
 
-  char initialized_text_dest[64];
+  char initialized_text_dest[MAX_LENGTH_KV];
 
   int32_t mbed_err;
   char mbed_err_hex_text[32];
@@ -33,17 +33,17 @@ GigaStorage::rc_flash GigaStorage::flash_test() {
   // If the key retrieve fails, we have to assume this device is not formatted properly for this firmware
   if (mbed_err != 0) {
     sprintf(mbed_err_hex_text, "%lX", mbed_err);
-    Serial.print("[STO] registry_store.get error = ");
-    Serial.println(mbed_err_hex_text);
+    SerialUSB.print("[STO] registry_store.get error = ");
+    SerialUSB.println(mbed_err_hex_text);
 
     return GigaStorage::rc_flash::FLASH_UNFORMATTED;
   }
 
-  Serial.print("[STO] Flash registry is valid, test key ");
-  Serial.print(registry_tdb_initialized);
-  Serial.print(" = '");
-  Serial.print(initialized_text_dest);
-  Serial.println("'");
+  SerialUSB.print("[STO] Flash registry is valid, test key ");
+  SerialUSB.print(registry_tdb_initialized);
+  SerialUSB.print(" = '");
+  SerialUSB.print(initialized_text_dest);
+  SerialUSB.println("'");
   
   return GigaStorage::rc_flash::FLASH_NO_ERROR;
 }
@@ -53,7 +53,7 @@ GigaStorage::rc_flash GigaStorage::flash_format() {
 
   char initialized_text_dest[64];
   int32_t mbed_err;
-  char mbed_err_hex_text[32];
+  char mbed_err_hex_text[64];
 
   // Disable the registry interface, as we are about to reformat flash out from underneath it
   registry_store.deinit();
@@ -78,8 +78,8 @@ GigaStorage::rc_flash GigaStorage::flash_format() {
   // If the key set fails, assume flash formatting did not work and bail out now
   if (mbed_err != 0) {
     sprintf(mbed_err_hex_text, "%lX", mbed_err);
-    Serial.print("[STO] registry_store.set error = ");
-    Serial.println(mbed_err_hex_text);
+    SerialUSB.print("[STO] registry_store.set error = ");
+    SerialUSB.println(mbed_err_hex_text);
 
     return GigaStorage::rc_flash::FLASH_FORMAT_FAILURE;
   }
@@ -91,18 +91,18 @@ GigaStorage::rc_flash GigaStorage::flash_format() {
   
   if (mbed_err != 0) {
     sprintf(mbed_err_hex_text, "%lX", mbed_err);
-    Serial.print("[STO] registry_store.get error = ");
-    Serial.println(mbed_err_hex_text);
+    SerialUSB.print("[STO] registry_store.get error = ");
+    SerialUSB.println(mbed_err_hex_text);
 
     return GigaStorage::rc_flash::FLASH_FORMAT_FAILURE;
   }
 
   // Print the contents of the key
-  Serial.print("[STO] Registry retrieval test success, test key ");
-  Serial.print(registry_tdb_initialized);
-  Serial.print(" = '");
-  Serial.print(initialized_text_dest);
-  Serial.println("'");
+  SerialUSB.print("[STO] Registry retrieval test success, test key ");
+  SerialUSB.print(registry_tdb_initialized);
+  SerialUSB.print(" = '");
+  SerialUSB.print(initialized_text_dest);
+  SerialUSB.println("'");
 
   return GigaStorage::rc_flash::FLASH_NO_ERROR;
 }
@@ -122,7 +122,7 @@ GigaStorage::rc_usb GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_le
 
   while (retries > 0) {
     if (!msd.connect()) {    
-      Serial.println("[STO] Trying to connect to USB...");
+      SerialUSB.println("[STO] Trying to connect to USB...");
       delay(100);
       retries--;
     } else {      
@@ -132,20 +132,20 @@ GigaStorage::rc_usb GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_le
 
   // If no USB flash drive is present then bail out now.
   if (retries) {
-    Serial.println("[STO] USB mass storage device is present.");
+    SerialUSB.println("[STO] USB mass storage device is present.");
   } else {
-    Serial.println("[STO] No USB mass storage device detected.");
+    SerialUSB.println("[STO] No USB mass storage device detected.");
     return GigaStorage::rc_usb::NO_DEVICE;
   }
 
   // A device is present.  Determine if it can be mounted.
   int err = usb.mount(&msd);
   if (err) {
-    Serial.print("[STO] Error mounting USB mass storage device: ");
-    Serial.println(err);
+    SerialUSB.print("[STO] Error mounting USB mass storage device: ");
+    SerialUSB.println(err);
     return GigaStorage::rc_usb::NOT_MOUNTABLE;
   } else {
-    Serial.println("[STO] USB mass storage device mounted.");
+    SerialUSB.println("[STO] USB mass storage device mounted.");
   }
 
   // The device is mounted.  Does it contain the specified file?
@@ -153,7 +153,7 @@ GigaStorage::rc_usb GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_le
 
   if (!file) {
     sprintf(error_text, "[STO] File %s cannot be opened on USB mass storage device, errno = %d", filename, errno);
-    Serial.println(error_text);
+    SerialUSB.println(error_text);
     return GigaStorage::rc_usb::NO_FILE;
   }
 
@@ -166,12 +166,12 @@ GigaStorage::rc_usb GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_le
   uint32_t file_size = ftell(file);
   if (file_size > *buffer_length) {
     sprintf(error_text, "[STO] File %s too large (%ld bytes) for internal buffer (%ld bytes).", filename, file_size, *buffer_length);
-    Serial.println(error_text);
+    SerialUSB.println(error_text);
     fclose(file);
     return GigaStorage::rc_usb::FILE_TOO_LARGE;
   } else {
     sprintf(error_text, "[STO] File %s found, %ld bytes.", filename, file_size);
-    Serial.println(error_text);
+    SerialUSB.println(error_text);
   }
 
   // Load the file into the buffer.
@@ -181,7 +181,7 @@ GigaStorage::rc_usb GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_le
   // Make sure we got what we asked for.
   if (bytes_read != file_size) {
     sprintf(error_text, "[STO] File %s not fully read: %ld bytes loaded of %ld bytes total.", filename, bytes_read, file_size);
-    Serial.println(error_text);
+    SerialUSB.println(error_text);
     return GigaStorage::rc_usb::FILE_NOT_READ;
   } 
 
@@ -193,7 +193,64 @@ GigaStorage::rc_usb GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_le
 
   // Return the buffer to the user.
   sprintf(error_text, "[STO] File %s loaded.", filename);
-  Serial.println(error_text);
+  SerialUSB.println(error_text);
   return GigaStorage::rc_usb::USB_NO_ERROR;
 }
+
+
+void GigaStorage::print_mbed_error(int32_t mbed_err) {
+
+  char message_text[64];
+
+  sprintf(message_text, "MBED err %lX: ", mbed_err);
+  SerialUSB.print(message_text);
+
+  switch (mbed_err) {
+    case MBED_SUCCESS: 
+      SerialUSB.println("success.");
+      break;
+
+    case MBED_ERROR_NOT_READY:
+      SerialUSB.println("not initialized.");
+      break;
+
+    case MBED_ERROR_READ_FAILED:
+      SerialUSB.println("unable to read from media.");
+      break;
+
+    case MBED_ERROR_WRITE_FAILED:
+      SerialUSB.println("unable to write to media.");
+      break;
+
+    case MBED_ERROR_INVALID_ARGUMENT:
+      SerialUSB.println("invalid argument given in function arguments.");
+      break;
+
+    case MBED_ERROR_INVALID_SIZE:
+      SerialUSB.println("invalid size given in function arguments.");
+      break;
+
+    case MBED_ERROR_INVALID_DATA_DETECTED:
+      SerialUSB.println("data is corrupt.");
+      break;
+
+    case MBED_ERROR_ITEM_NOT_FOUND:
+      SerialUSB.println("no such key.");
+      break;
+
+    case MBED_ERROR_MEDIA_FULL:
+      SerialUSB.println("not enough room on media.");
+      break;
+
+    case MBED_ERROR_WRITE_PROTECTED:
+      SerialUSB.println("already stored with 'write once' flag.");
+      break;
+
+    default:
+      SerialUSB.println("error code unknown!");
+      break;
+  }
+
+}
+
 
