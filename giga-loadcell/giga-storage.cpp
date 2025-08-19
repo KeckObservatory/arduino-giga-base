@@ -14,8 +14,16 @@ void GigaStorage::setup() {
   pinMode(PA_15, OUTPUT); 
   digitalWrite(PA_15, HIGH); 
 
-  // Enable the registry
+  // Enable the registry flash storage
   registry_store.init();
+
+  // Check that the flash storage is formatted for use.  If not, format it now.
+  rc_flash err = flash_test();
+  if ((err == rc_flash::FLASH_UNFORMATTED) || KVSTORE_FORCE_REFORMAT) {
+    SerialUSB.println("[STO] Flash is unreadable or unformatted! Auto initializing...");
+    flash_format();
+  }
+
 }
 
 // Determine if the flash has been formatted by testing the 1st partition for presence

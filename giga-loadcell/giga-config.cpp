@@ -12,21 +12,53 @@ const char GigaConfig::config_ini_filename[] = CONFIG_INI_FILENAME;
 
 void GigaConfig::setup() {
 
-  KVString s1 = registry_net_ip;
-  KVString s2 = "10.77.0.210";
-  auto s1s2 = etl::make_pair(s1, s2);
+  int32_t mbed_err;
+  char message_text[128];
 
-  KVString s3 = registry_net_netmask;
-  KVString s4 = "255.255.0.0";
-  auto s3s4 = etl::make_pair(s3, s4);
+  mbed::TDBStore::iterator_t iterator;
+  uint16_t index = 0;
+  char key[MAX_LENGTH_KV] = {0};
+  char value[MAX_LENGTH_KV] = {0};
+  size_t length;
 
-  registry.insert(s1s2);
-  registry.insert(s3s4);
+  // Preload the registry with the values stored in flash, if there are any
+  SerialUSB.println("[CFG] Preloading registry with values from flash.");
+  bzero(key, MAX_LENGTH_KV);
 
-  for (const std::pair<KVString, KVString>& n : registry) {
-    SerialUSB.println(n.first.c_str());
-    SerialUSB.println(n.second.c_str());
+  // Iterate the keys
+  mbed_err = storage.registry_store.iterator_open(&iterator, NULL);
+  while (storage.registry_store.iterator_next(iterator, key, MAX_LENGTH_KV) != MBED_ERROR_ITEM_NOT_FOUND) {
+
+    // Get the value for this key
+    bzero(value, MAX_LENGTH_KV);
+    mbed_err = storage.registry_store.get(key, value, sizeof(value), &length);
+
+    if (mbed_err == MBED_SUCCESS) {
+
+      sprintf(message_text, "[CFG]  %s = '%s'", key, value);
+      SerialUSB.println(message_text);
+
+      // Add the key/value to the in-memory registry but skip the mbed reserved key
+      if (strcmp(key, registry_tdb_reserved) != 0) {
+
+        registry.insert(etl::make_pair(key, value));
+      }
+
+    } else {
+
+      sprintf(message_text, "[CFG] storage.registry_store.get failed!");
+      SerialUSB.println(message_text);
+      storage.print_mbed_error(mbed_err);
+      SerialUSB.println("***** FLASH STORAGE FAILURE *****");
+    }
+
+    // Prepare for next key
+    index++;
+    bzero(key, MAX_LENGTH_KV);
   }
+  mbed_err = storage.registry_store.iterator_close(iterator);
+
+  SerialUSB.println("[CFG] Registry preload complete."); 
 }
 
 // Parse an INI file that is already loaded into a buffer in memory
@@ -106,13 +138,6 @@ GigaConfig::rc GigaConfig::registry_load() {
   char message_text[128];
   int32_t mbed_err;
 
-  // Check that the flash storage is formatted for use.  If not, format it now.
-  GigaStorage::rc_flash err = storage.flash_test();
-  if ((err == GigaStorage::rc_flash::FLASH_UNFORMATTED) || KVSTORE_FORCE_REFORMAT) {
-    SerialUSB.println("[CFG] Flash is unreadable or unformatted! Auto initializing...");
-    storage.flash_format();
-  }
-
   // Check the USB mass storage subsystem for the presence of a USB flash drive.  If it is present,
   // attempt to load an INI file into the buffer in this GigaConfig instance.
   GigaStorage::rc_usb rc_usb = storage.usb_file_load(config_ini_buffer, &config_ini_buffer_length, config_ini_filename);
@@ -181,7 +206,12 @@ GigaConfig::rc GigaConfig::registry_load() {
   char stored_value[MAX_LENGTH_KV];
   size_t retrieved_length;
 
-  for (const auto& [key, value] : registry) {
+  // Internally the registry uses an etl::pair to store elements.  
+  for (const etl::pair<KVString, KVString>& element : registry) {
+
+    // Decompose the element into the key and the value
+    KVString key = element.first;
+    KVString value = element.second;
 
     // Check the flash for this key
     bzero(stored_value, MAX_LENGTH_KV);
@@ -256,15 +286,15 @@ GigaConfig::rc GigaConfig::registry_load() {
 
     if (s.first != NO_ERROR) {
 
+      
+
+
       sprintf(message_text, "[CFG] MISSING REGISTRY ENTRY: %s not present in registry!", key);
       SerialUSB.println(message_text);
       return GigaConfig::rc::REGISTRY_INCOMPLETE;
     }
-
-
   }
   
-
 
 
 
