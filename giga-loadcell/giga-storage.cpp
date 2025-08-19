@@ -26,7 +26,6 @@ void GigaStorage::setup() {
     SerialUSB.println("[STO] Flash is unreadable or unformatted! Auto initializing...");
     flash_format();
   }
-
 }
 
 /******************************************************************************************************************************
@@ -83,7 +82,13 @@ GigaStorage::rc_flash GigaStorage::flash_format() {
   // Erase takes about 3 seconds
   SerialUSB.println("[STO] Erasing flash.");
   block_device.erase(0x0, block_device.size());
-  
+
+  // If we want to simulate a factory fresh device, stop executing now
+  if (KVSTORE_HALT_AFTER_FORMAT) {
+    SerialUSB.println("***** HALTING *****");
+    while(1);
+  }
+ 
   // Create one partition on the flash in the first megabyte.  The other 15MB remain for future use
   SerialUSB.print("[STO] Formatting flash: 1 partition, size ");
   SerialUSB.print(KVSTORE_PARTITION_SIZE_MB);

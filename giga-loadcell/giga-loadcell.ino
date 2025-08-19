@@ -53,11 +53,21 @@ void setup() {
   // Setup the configuration subsystem
   SerialUSB.println(">>> Init: registry.");
   config.setup();
-  config.registry_load();
+  GigaConfig::rc rc_registry = config.registry_load();
+
+  // If the registry failed to load we cannot continue.
+  if (rc_registry != GigaConfig::rc::NO_ERROR) {
+    SerialUSB.println(">>> HALTING FOR FAILURE <<<");
+    while (1) led.panic();  
+  }
 
   // You can use Ethernet.init(pin) to configure the CS pin
   SerialUSB.println(">>> Init: ethernet.");
-  ethernet.setup();
+  GigaEthernet::rc_ethernet rc_ethernet = ethernet.setup();
+  if (rc_ethernet != GigaEthernet::rc_ethernet::ETHER_NO_ERROR) {
+    SerialUSB.println(">>> HALTING FOR FAILURE <<<");
+    while (1) led.panic();  
+  }
 
   // Setup the load cell interface 
   // CRITICAL NOTE: This must be done _after_ the Ethernet device setup due to some not-yet-understood

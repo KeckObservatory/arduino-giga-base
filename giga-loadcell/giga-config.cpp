@@ -314,7 +314,7 @@ GigaConfig::rc GigaConfig::registry_load() {
   }
 
   if (missing_keys > 0) {
-      sprintf(message_text, "***** INCOMPLETE REGISTRY - %d KEYS MISSING! *****", missing_keys);
+      sprintf(message_text, "***** INCOMPLETE REGISTRY - %d KEY(S) MISSING! *****", missing_keys);
       SerialUSB.println(message_text);
       return GigaConfig::rc::REGISTRY_INCOMPLETE;
   }

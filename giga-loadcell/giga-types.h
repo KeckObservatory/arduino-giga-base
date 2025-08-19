@@ -56,13 +56,13 @@ using GigaRegistryRequiredKeys = const std::initializer_list<const char *>;
 
 #ifdef comment_section
 
-/**
+/******************************************************************************************************************************
  * @brief Thing.
  *
  * @param[in]  foo                  The foo.
  * @param[in]  foo_size             Size of foo.
  *
  * @returns 0 for success, 1 for failure
- */
+ ******************************************************************************************************************************/
 
  #endif

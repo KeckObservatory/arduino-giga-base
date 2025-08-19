@@ -7,9 +7,12 @@
 
 #include "giga-ethernet.h"
 
-void GigaEthernet::setup() {
+/******************************************************************************************************************************
+ * @brief Setup the ethernet subsystem.
+ ******************************************************************************************************************************/
+GigaEthernet::rc_ethernet GigaEthernet::setup() {
 
-  char log_buf[96];
+  char message_text[128];
 
   // Ethernet.init(pin) configures the CS pin, which in this case is 10
   Ethernet.init(10);
@@ -26,73 +29,49 @@ void GigaEthernet::setup() {
   mac[3] = (low_mac >> 2) & 0xFF;
   mac[4] = (low_mac >> 1) & 0xFF;
   mac[5] = (low_mac     ) & 0xFF;
+ 
+  // The registry entries for these 4 settings are guaranteed to exist because they are listed in the
+  // REGISTRY_REQUIRED_KEYS define in giga-config.cpp.
+  KVStringRC registry_ip = config.registry_get(registry_net_ip);
+  KVStringRC registry_netmask = config.registry_get(registry_net_netmask);
+  KVStringRC registry_gateway = config.registry_get(registry_net_gateway);
+  KVStringRC registry_dns = config.registry_get(registry_net_dns);
 
-  // Get the IP address from the registry, which will either get it directly from flash, or from
-  // a USB flash drive that is inserted.
-  IPAddress ip("10.77.0.210");
-  IPAddress dns("8.8.8.8");
-  IPAddress gateway("10.77.0.1");
-  IPAddress netmask("255.255.0.0");
-
-  //KVString ip2("10.77.0.210");
-
-  // Get the IP address out of the registry
-  auto registry_ip = config.registry_get(registry_net_ip);
-  if (registry_ip.first == GigaConfig::rc::NO_ERROR) {
-    SerialUSB.println(">>>>> success finding registry_net_ip");
-  }
-
-  auto registry_cal = config.registry_get(registry_cal_placeholder);
-  if (registry_cal.first == GigaConfig::rc::NO_ERROR) {
-    SerialUSB.println("success found registry_cal_placeholder");
-  } else {
-    SerialUSB.println(">>>>> failed to find registry_cal_placeholder");
-  }
-
-  
-
-#ifdef zero
-  KVString registry_ip = config.registry_get(registry_net_ip);
-  KVString registry_netmask = config.registry_get(registry_net_netmask);
-  KVString registry_gateway = config.registry_get(registry_net_gateway);
-  KVString registry_dns = config.registry_get(registry_net_dns);
-  sprintf(log_buf, "[ETH] Configuring IP address %s (netmask %s, gateway %s, dns %s)", registry_ip.c_str(), registry_netmask.c_str(), registry_gateway.c_str(), registry_dns.c_str());
-  SerialUSB.println(log_buf);
-#endif
-
-#ifdef zero
   // Convert to IP address instances
-  IPAddress ip(registry_ip.c_str());
-  IPAddress netmask(registry_netmask.c_str());
-  IPAddress gateway(registry_gateway.c_str());
-  IPAddress dns(registry_dns.c_str());
-#endif 
+  IPAddress ip(registry_ip.second.c_str());
+  IPAddress netmask(registry_netmask.second.c_str());
+  IPAddress gateway(registry_gateway.second.c_str());
+  IPAddress dns(registry_dns.second.c_str());
 
-  // initialize the Ethernet device
+  sprintf(message_text, "[ETH] Configuring IP address %s (netmask %s, gateway %s, dns %s)", ip.toString().c_str(), netmask.toString().c_str(), gateway.toString().c_str(), dns.toString().c_str());
+  SerialUSB.println(message_text);
+
+  // Initialize the Ethernet device
   Ethernet.begin(mac, ip, dns, gateway, netmask);
 
-  // Check for Ethernet hardware present
+  // Check for a missing ethernet shield
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {
     SerialUSB.println("[ETH] Ethernet hardware is not present!");
-    return;
-
-    //while (true) {
-    //  led.panic();
-    //}
+    return GigaEthernet::rc_ethernet::ETHER_NO_HARDWARE;
   }
 
+  // Check for a missing ethernet cable
   if (Ethernet.linkStatus() == LinkOFF) {
     SerialUSB.println("[ETH] Ethernet cable is not connected.");
+    return GigaEthernet::rc_ethernet::ETHER_NO_CABLE;
   }
-
   
-  // start listening for clients
+  // Start listening for clients
   SerialUSB.println("[ETH] Starting TCP/IP server.");
   server.begin();
 
-
+  // Return success
+  return GigaEthernet::rc_ethernet::ETHER_NO_ERROR;
 }
 
+/******************************************************************************************************************************
+ * @brief Run the ethernet communications loop.
+ ******************************************************************************************************************************/
 void GigaEthernet::loop() {
 
   // This value is never actually used but we need it to consume any data coming from the clients,
@@ -132,11 +111,16 @@ void GigaEthernet::loop() {
 }
 
 
+/******************************************************************************************************************************
+ * @brief Send every connected client the contents of a buffer.
+ *
+ * @param[in]  buf                  The (string) contents to send.
+ ******************************************************************************************************************************/
 void GigaEthernet::send_all(char *buf) {
 
   for (byte i = 0; i < 8; i++) {
     if (clients[i] && clients[i].connected()) {
-      // Send every connected client the latest load value
+      // Send to every connected client
       clients[i].print(buf);
     }
   }

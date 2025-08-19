@@ -40,6 +40,9 @@
 // Define this to 1 during development/testing to force a reformat of the flash
 #define KVSTORE_FORCE_REFORMAT        0
 
+// Define this to 1 during development/testing to halt after formatting, to simulate factory-fresh devices
+#define KVSTORE_HALT_AFTER_FORMAT     0
+
 // Define a registry key for use with flash init
 const char registry_tdb_reserved[] = "TDBS";  // this key is created in flash automatically by the mbed library
 const char registry_tdb_initialized[] = "tdb.initialized";

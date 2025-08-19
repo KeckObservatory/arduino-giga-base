@@ -49,9 +49,15 @@ class GigaEthernet {
     uint32_t Hash32Len5to12(const char *s, size_t len);
 
   public:
+    enum rc_ethernet : uint8_t {
+        ETHER_NO_ERROR = 0,
+        ETHER_NO_HARDWARE,
+        ETHER_NO_CABLE,
+    };
+
     GigaEthernet(GigaConfig& the_config) : config(the_config), server(ETHERNET_LISTEN_PORT) {}
 
-    void setup();
+    GigaEthernet::rc_ethernet setup();
     void loop();
     void send_all(char *buf);
 
