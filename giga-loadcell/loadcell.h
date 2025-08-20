@@ -8,6 +8,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+
+#include <Arduino.h>
+
 #include "timing.h"
 
 #define LOADCELL_TIMEOUT     1000 // ms
