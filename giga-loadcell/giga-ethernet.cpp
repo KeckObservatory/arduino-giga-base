@@ -199,6 +199,19 @@ uint32_t GigaEthernet::GetUIDtoMAC() {
 
 }
 
+void GigaEthernet::GetUID(uint8_t *buf) {
+
+  // Arrange 12 bytes of UID into buf[]
+  uint32_t uid = HAL_GetUIDw0();
+  memcpy (&buf[8], &uid, 4);
+
+  uid = HAL_GetUIDw1();
+  memcpy (&buf[4], &uid, 4);
+
+  uid = HAL_GetUIDw2();
+  memcpy (&buf[0], &uid, 4);
+}
+
 
 
 

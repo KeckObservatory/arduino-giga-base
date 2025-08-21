@@ -30,6 +30,9 @@ Loadcell loadcell;
 
 Timer client_message_timer(100);
 
+// The processor universal ID
+uint8_t uid[12];
+
 void setup() {
 
   // Hold off on setup for two seconds to allow the USB port to connect to the PC, if one is present
@@ -42,6 +45,13 @@ void setup() {
   auto ver = __cplusplus;
   SerialUSB.print(">>> Built with C++ version: ");  
   SerialUSB.println(ver);
+
+  // Print the UID, for eventual correlation with calibrations
+  char message_text[128];
+
+  ethernet.GetUID(uid);
+  sprintf(message_text, ">>> Processor UID = %02X%02X%02X%02X-%02X%02X%02X%02X-%02X%02X%02X%02X", uid[0], uid[1], uid[2], uid[3], uid[4], uid[5], uid[6], uid[7], uid[8], uid[9], uid[10], uid[11]);
+  SerialUSB.println(message_text);
 
   // Setup RGB LED subsystem
   led.setup();

@@ -64,6 +64,9 @@ class GigaEthernet {
     // Convert the STM32 unique ID to a MAC address
     uint32_t GetUIDtoMAC();
 
+    // Get the raw UID to a 12 byte buffer
+    void GetUID(uint8_t *buf);
+
 };
 
 #endif

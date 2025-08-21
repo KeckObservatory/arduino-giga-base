@@ -1,0 +1,92 @@
+<mxfile host="65bd71144e">
+    <diagram id="hWegroOW1fiJpIjpX9gN" name="Page-1">
+        <mxGraphModel dx="468" dy="987" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="3" value="" style="endArrow=none;html=1;rounded=1;curved=0;strokeWidth=5;fillColor=#a0522d;strokeColor=#6D1F00;" edge="1" parent="1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="110" y="139" as="sourcePoint"/>
+                        <mxPoint x="360" y="69" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="245" y="121"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="14" style="edgeStyle=orthogonalEdgeStyle;curved=1;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;strokeWidth=3;" edge="1" parent="1" source="10" target="4">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="160" y="280"/>
+                            <mxPoint x="160" y="170"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="10" value="RS-485 Shield" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9933;strokeColor=#d79b00;" vertex="1" parent="1">
+                    <mxGeometry x="220" y="260" width="120" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="23" style="edgeStyle=orthogonalEdgeStyle;curved=1;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;strokeWidth=2;" edge="1" parent="1" source="11" target="17">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="370" y="320"/>
+                            <mxPoint x="370" y="280"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="11" value="Ethernet Shield" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9933;strokeColor=#d79b00;" vertex="1" parent="1">
+                    <mxGeometry x="220" y="300" width="120" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="Arduino GIGA R1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+                    <mxGeometry x="140" y="340" width="200" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="PoE Switch" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="440" y="260" width="100" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="25" style="edgeStyle=orthogonalEdgeStyle;curved=1;html=1;exitX=0.88;exitY=0.25;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;strokeWidth=2;" edge="1" parent="1" source="19" target="20">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="26" style="edgeStyle=orthogonalEdgeStyle;curved=1;html=1;exitX=0.875;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;strokeWidth=2;" edge="1" parent="1" source="19" target="21">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="27" style="edgeStyle=orthogonalEdgeStyle;curved=1;html=1;exitX=0.96;exitY=0.7;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;strokeWidth=2;" edge="1" parent="1" source="19" target="22">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="19" value="WMKO Ops&lt;br&gt;Network" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="480" y="310" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="EPICS IOC" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="630" y="240" width="110" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" value="EPICS Archiver" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="630" y="300" width="110" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="22" value="Grafana" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="630" y="360" width="110" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="24" style="edgeStyle=orthogonalEdgeStyle;curved=1;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.4;entryY=0.1;entryDx=0;entryDy=0;entryPerimeter=0;endArrow=none;endFill=0;strokeWidth=2;" edge="1" parent="1" source="17" target="19">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="28" value="" style="sketch=0;pointerEvents=1;shadow=0;dashed=0;html=1;strokeColor=#006EAF;fillColor=#1ba1e2;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;shape=mxgraph.veeam2.usb_drive;fontColor=#ffffff;rotation=-180;" vertex="1" parent="1">
+                    <mxGeometry x="340" y="351.5" width="40" height="17" as="geometry"/>
+                </mxCell>
+                <mxCell id="33" value="" style="group" vertex="1" connectable="0" parent="1">
+                    <mxGeometry x="184.4584560605715" y="89.37590832007139" width="131.3793791933104" height="94.64212178041588" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="DRC-10T" style="rounded=1;whiteSpace=wrap;html=1;rotation=-15;" vertex="1" parent="33">
+                    <mxGeometry x="9.541543939428493" y="49.62409167992861" width="120" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="" style="rounded=1;whiteSpace=wrap;html=1;rotation=-15;" vertex="1" parent="33">
+                    <mxGeometry x="3.541543939428493" y="33.62409167992861" width="20" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="" style="rounded=1;whiteSpace=wrap;html=1;rotation=-15;" vertex="1" parent="33">
+                    <mxGeometry x="99.5415439394285" y="8.624091679928611" width="20" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="31" value="" style="rounded=1;whiteSpace=wrap;html=1;rotation=-15;fillStyle=solid;fillColor=#000000;arcSize=0;" vertex="1" parent="33">
+                    <mxGeometry x="55.7215439394285" y="-0.0759083200713917" width="6" height="50.03" as="geometry"/>
+                </mxCell>
+                <mxCell id="29" value="" style="rounded=1;whiteSpace=wrap;html=1;rotation=-15;" vertex="1" parent="33">
+                    <mxGeometry x="47.62154393942848" y="12.244091679928616" width="20" height="20.35" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
