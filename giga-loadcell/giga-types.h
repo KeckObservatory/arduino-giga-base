@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <string.h>
+
 #include <Embedded_Template_Library.h>
 #include <etl/unordered_map.h>
 #include <etl/string.h>

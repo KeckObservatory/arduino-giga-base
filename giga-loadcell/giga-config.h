@@ -9,13 +9,15 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <Arduino_USBHostMbed5.h>
-#include <IPAddress.h>
+
 #include <Embedded_Template_Library.h>
 #include <etl/unordered_map.h>
 #include <etl/string.h>
 #include <etl/string_utilities.h>
 #include <etl/optional.h>
+
+#include <Arduino_USBHostMbed5.h>
+#include <IPAddress.h>
 
 #include "giga-types.h"
 #include "giga-storage.h"

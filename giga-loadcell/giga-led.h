@@ -46,7 +46,6 @@ class GigaLED {
     void heartbeat(bool warning);
     void panic();
     void test_loop();
-
 };
 
 #endif

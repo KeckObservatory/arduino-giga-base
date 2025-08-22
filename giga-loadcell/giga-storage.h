@@ -17,15 +17,15 @@
 #include <Arduino.h>
 #include <DigitalOut.h>
 #include <Arduino_USBHostMbed5.h>
+#include <mbed_error.h>
 #include <QSPIFBlockDevice.h>
 #include <BlockDevice.h>
 #include <MBRBlockDevice.h>
 #include <TDBStore.h>
 #include <FATFileSystem.h>
-#include <mbed_error.h>
 
-#include "giga-types.h"
 #include "timing.h"
+#include "giga-types.h"
 
 // The key/value storage partition was created when formatting the device previously with this code.
 // It lives on partition 1 which is currently the only one we need.  Store 1MB of keys here with 15MB
