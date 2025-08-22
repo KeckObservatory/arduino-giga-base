@@ -1,7 +1,0 @@
-### Fooo
-
-
-Installation
-
-Calibration
-

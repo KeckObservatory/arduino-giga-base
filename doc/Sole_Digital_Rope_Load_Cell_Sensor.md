@@ -18,7 +18,7 @@ Pictured below are the components integral to the complete solution.
 
 <div style="text-align: center;">
 
-![Diagram](Load_Cell.drawio.svg)
+![Diagram](images/Load_Cell.drawio.svg)
 </div>
 
 This design is composed of:
@@ -76,7 +76,7 @@ For the purposes of developing software to run on this hardware stack, these ins
 
 1) The RS-485 shield does not sit flush with the shield below it, due to the PC board length.  Depending on your needs, either trim the PC board to not collide with the RJ-45 connector, or add a row of headers (8 and 10 pin on one side, 6 and 8 pin on the other) to offset, such as these.
 
-    ![alt text](stacking_header_image.png)
+    ![alt text](images/stacking_header_image.png)
 
 1) Connect the load cell to the RS-485 shield via the screw terminals or other connector.
 
@@ -148,7 +148,7 @@ For the purposes of developing software to run on this hardware stack, these ins
 1) Press the reset (RST) button on the RS-485 shield.
 
 1) Verify the device is reporting values by connecting to it over the network.  For example, telnet to it and observe the results:
-    ![alt text](telnet_image.png)
+    ![alt text](images/telnet_image.png)
 
 1) The device is now ready for the EPICS IOC to communicate with it.
 
@@ -156,7 +156,7 @@ For the purposes of developing software to run on this hardware stack, these ins
 
 A wire rope tension load cell is effectively an analog device that represents the force on the sensor as a resistance.  This resistance is converted into a numerical value by an on-board analog to digital converter, encoded and then sent out a serial port (RS-485).
 
-![alt text](load_cell_image.png)
+![alt text](images/load_cell_image.png)
 
 The protocol it implements is as follows, each packet sent immediately after the previous one, at 4800 baud.  Inspection of the serial stream indicates that the transmit time of one packet is 10.1ms, which is just under the threshold to yield an exact 100Hz signal.  (Running the feedback over the ethernet at 100Hz will be effective, however.)
 
