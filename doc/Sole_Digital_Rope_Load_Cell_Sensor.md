@@ -196,16 +196,16 @@ This device was chosen primarily due to its flexibility to fill many embedded sy
 
 For this load cell project we implemented libraries in C++ for multiple subsystems.
 
-USB Mass Storage Devices
+USB Mass Storage Devices (giga-storage.cpp)
 : The USB 2.0 Type A port is capable of running in host mode.  This allows us to use a USB flash disk with a filesystem on it to provide a means to configure the Arduino without having to statically embed settings (such as an IP address) in the firmware itself.  The [ARM MBED OS 5](https://os.mbed.com/docs/mbed-os/v5.15/introduction/index.html) library fully supports the GIGA R1 board and provides convenient APIs for accessing mass storage devices.  It would be very straightforward to further use this API to write the recorded load cell values to a large flash drive, eliminating the dependence on ethernet.
 
-On-board Flash
+On-board Flash (giga-config.cpp)
 : The GIGA R1 has 16MB of flash storage available for use.  Typically, this is used to store a driver for the WiFi (which we do not use) and thus can be reformatted for own use.  In this project we allocate 1MB of this flash for a key/value data store that is used to permanently save the settings from an INI file.  The flash drive can be removed and the settings will be read at startup.
 
-RGB LED
+RGB LED (giga-led.cpp)
 : The GIGA R1 puts 3 separate LEDs on GPIO lines.  We can then use them to give the user feedback on the state of the device without needing a USB serial connection to a PC.  Flashing green at 1Hz indicates it is running normally.  Rapid flashing red indicates a failure mode that must be investigated with a serial terminal.
 
-Ethernet
+Ethernet (giga-ethernet.cpp)
 : The default Arduino Ethernet library is adequate for this project.  Notably, the developer is obligated to provide a MAC address for the WizNet W5500 chip on the shield.  Rather than require someone to generate a series of addresses we have chosen to convert the unique microprocessor serial number into the last 3 bytes of the MAC.  The first three are WizNet's organizationally unique ID (OUI) `00:08:DC` found [here](https://standards-oui.ieee.org/).
 
 ## Settings in config.ini 

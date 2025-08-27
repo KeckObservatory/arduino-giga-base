@@ -65,6 +65,16 @@ GigaEthernet::rc_ethernet GigaEthernet::setup() {
   SerialUSB.println("[ETH] Starting TCP/IP server.");
   server.begin();
 
+
+  //NTPClient timeClient(udp, "128.171.136.15", 3600, 60000);
+  ntp.begin();
+
+
+
+
+
+
+
   // Return success
   return GigaEthernet::rc_ethernet::ETHER_NO_ERROR;
 }
@@ -106,6 +116,16 @@ void GigaEthernet::loop() {
     if (clients[i] && !clients[i].connected()) {
       clients[i].stop();
     }
+  }
+
+
+
+  // Use the red part of the RGB LED as a panic indicator 
+  if (ntpTimer.done()) {
+    ntpTimer.resume();
+
+    ntp.update();
+    ntp.printFormattedTime();
   }
 
 }

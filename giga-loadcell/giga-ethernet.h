@@ -17,6 +17,7 @@
 
 #include "timing.h"
 #include "giga-config.h"
+#include "giga-ntp.h"
 
 // Use standard telnet port 23 since the protocol is human readable
 #define ETHERNET_LISTEN_PORT 23
@@ -25,6 +26,16 @@
 #define WIZNET_OUI_0 0x00
 #define WIZNET_OUI_1 0x08
 #define WIZNET_OUI_2 0xDC
+
+#define NTP_INTERVAL 1100
+#define HST_OFFSET   (-10*3600)
+
+#define NTP_UPDATE_INTERVAL 15000
+#define NTP_SERVER "128.171.136.15"
+#define NTP_SERVER_UNK   "128.171.3.3"
+
+// irtfgps1.ifa.hawaii.edu
+#define NTP_SERVER_IRTF   "128.171.165.26"  
 
 class GigaEthernet {
 
@@ -35,6 +46,9 @@ class GigaEthernet {
     // One server and multiple possible clients, even if only one is expected to be used at a time
     EthernetServer server;
     EthernetClient clients[8];
+    EthernetUDP udp;
+    GigaNTPClient ntp;
+    Timer ntpTimer;
 
     // Magic numbers for 32-bit hashing, used in the MAC address routines below
     const uint32_t c1 = 0xcc9e2d51;
@@ -55,7 +69,7 @@ class GigaEthernet {
         ETHER_NO_CABLE,
     };
 
-    GigaEthernet(GigaConfig& the_config) : config(the_config), server(ETHERNET_LISTEN_PORT) {}
+    GigaEthernet(GigaConfig& the_config) : config(the_config), server(ETHERNET_LISTEN_PORT), udp(), ntp(udp, NTP_SERVER, HST_OFFSET, NTP_UPDATE_INTERVAL), ntpTimer(NTP_INTERVAL) {}
 
     GigaEthernet::rc_ethernet setup();
     void loop();
