@@ -84,6 +84,8 @@ void GigaNTPClient::begin(uint16_t port) {
 
 bool GigaNTPClient::update() {
 
+  char message[128];
+
   switch (_state) {
 
     case State::uninitialized: {
@@ -141,19 +143,36 @@ bool GigaNTPClient::update() {
       _udp->read(_packetBuffer, NTP_PACKET_SIZE);
 
       // Remember when we got this value
-      _lastEpochKnown = micros();
+      _lastNTPMicros = micros();
 
-      // Combine four bytes to a uint32, this is NTP time (seconds since Jan 1 1900):  
+      // How long did it take to make the request?
+      uint32_t ntp_request_time = ((millis() - _lastRequest) * 1000);
+
+      // Bytes 40-43 are NTP time, seconds since Jan 1 1900  
       uint32_t ntp_seconds = (_packetBuffer[40] << 24) | (_packetBuffer[41] << 16) | (_packetBuffer[42] << 8) | _packetBuffer[43];
 
-      // Convert NTP to Unix epoch
-      _lastEpochSeconds = ntp_seconds - EPOCH_OFFSET;
+      // Add our time offset
+      ntp_seconds += _timeOffset;
 
-      // The next 4 bytes are the fractional seconds
+      // Convert to microseconds and store
+      _lastNTPEpoch = ntp_seconds * 1e6;
+
+      // Add the request trip time
+      _lastNTPEpoch += ntp_request_time;   // is this the right calculation?
+
+      // Bytes 44-47 the fractional seconds
       uint32_t ntp_frac_seconds = (_packetBuffer[44] << 24) | (_packetBuffer[45] << 16) | (_packetBuffer[46] << 8) | _packetBuffer[47];
 
-      // Convert fractional seconds to integer microseconds
-      _lastEpochMicros = trunc((float(ntp_frac_seconds) / pow(2,32)) * 10e6);
+      // Convert fractional seconds to integer microseconds and add to the epoch value
+      _lastNTPEpoch += trunc((double(ntp_frac_seconds) / pow(2,32)) * 1e6);
+
+      // Offset the Unix epoch to get to the more typical time standard
+      _lastNTPEpoch -= (UNIX_EPOCH_OFFSET * 1e6);
+
+#ifdef DEBUG_NTP
+      //sprintf(message, "ntp_seconds: %lu  ntp_frac_seconds: %lu   _lastNTPEpoch=%llu", ntp_seconds, ntp_frac_seconds, _lastNTPEpoch);
+      //SerialUSB.println(message);
+#endif
 
       // Back to idle
       _state = State::idle;
@@ -211,70 +230,90 @@ bool GigaNTPClient::isTimeSet() const {
   return (_lastUpdate != 0); // returns true if the time has been set, else false
 }
 
-unsigned long GigaNTPClient::getEpochTime() const {
-  return _timeOffset +                      // User offset
-         _lastEpochSeconds +                // Epoch returned by the NTP server
-         ((millis() - _lastUpdate) / 1000); // Time since last update
+
+double GigaNTPClient::getEpochTimeF() const {
+
+  // How much time has elapsed since the last NTP sync?
+  int64_t elapsed = micros() - _lastNTPMicros;
+
+  // micros() will roll over back to 0 in ~70 hours, adjust it back by adding 2^32
+  if (elapsed < 0) {
+    elapsed += 0x100000000;
+  }
+  //TODO: deal with overflow of micros()
+
+  // Add that to what time it was at sync
+  uint64_t now = _lastNTPEpoch + elapsed;
+
+  // Convert back to seconds as a double precision float
+  double now_f = double(now) / 1e6;
+
+  return now_f;
 }
 
 int GigaNTPClient::getDay() const {
-  return (((getEpochTime()  / 86400L) + 4 ) % 7); //0 is Sunday
+  uint32_t t = trunc(getEpochTimeF());
+  return (((t / 86400L) + 4 ) % 7); //0 is Sunday
 }
 int GigaNTPClient::getHours() const {
-  return ((getEpochTime()  % 86400L) / 3600);
+  uint32_t t = trunc(getEpochTimeF());
+  return ((t % 86400L) / 3600);
 }
 int GigaNTPClient::getMinutes() const {
-  return ((getEpochTime() % 3600) / 60);
+  uint32_t t = trunc(getEpochTimeF());
+  return ((t % 3600) / 60);
 }
 int GigaNTPClient::getSeconds() const {
-  return (getEpochTime() % 60);
-}
-uint32_t GigaNTPClient::getEpochMicros() const {
-  // Compute how many microseconds since the last whole second
-  uint32_t t = (micros() - _lastEpochKnown) % 60000;
-
-  return _lastEpochMicros + t;  
+  uint32_t t = trunc(getEpochTimeF());
+  return (t % 60);
 }
 
+
+
+void GigaNTPClient::printFormattedTime() {
+  char temp_str[32];
+
+  double rawTime = getEpochTimeF();
+  uint32_t rawTimeT = trunc(rawTime);
+  double rawTimeFrac = rawTime - rawTimeT;
+
+  uint32_t hours = (rawTimeT % 86400L) / 3600;
+  uint32_t minutes = (rawTimeT % 3600) / 60;
+  uint32_t seconds = rawTimeT % 60;
+  
+  if (seconds < 10) {
+    sprintf(temp_str, "%02lu:%02lu:0%.6f", hours, minutes, seconds + rawTimeFrac);
+  } else {
+    sprintf(temp_str, "%02lu:%02lu:%.6f", hours, minutes, seconds + rawTimeFrac);
+  }
+  
+  SerialUSB.println(temp_str);
+}
  
 
 String GigaNTPClient::getFormattedTime() const {
   char temp_str[32];
 
-  uint32_t rawTime = getEpochTime();
-  uint32_t hours = (rawTime % 86400L) / 3600;
-  uint32_t minutes = (rawTime % 3600) / 60;
-  uint32_t seconds = rawTime % 60;
-  uint32_t rawEpochMicros = getEpochMicros();
-  float epochMicros =  rawEpochMicros / 10e6;
+  float rawTime = getEpochTimeF();
+  uint32_t rawTimeT = trunc(rawTime);
+  uint32_t rawTimeS = trunc(rawTime);
 
+  float integral_part;
+  float rawTimeFrac = modf(rawTime, &integral_part);
+
+  uint32_t hours = (rawTimeT % 86400L) / 3600;
+  uint32_t minutes = (rawTimeT % 3600) / 60;
+  uint32_t seconds = rawTimeT % 60;
+  
   if (seconds < 10) {
-    sprintf(temp_str, "%02lu:%02lu:0%.6f", hours, minutes, seconds + epochMicros);
+    sprintf(temp_str, "%02lu:%02lu:0%.6f", hours, minutes, seconds + rawTimeFrac);
   } else {
-    sprintf(temp_str, "%02lu:%02lu:%.6f", hours, minutes, seconds + epochMicros);
+    sprintf(temp_str, "%02lu:%02lu:%.6f", hours, minutes, seconds + rawTimeFrac);
   }
 
   // Encapsulate as a String and return
   String time_str = temp_str;
   return time_str;
-}
-
-void GigaNTPClient::printFormattedTime() {
-  char temp_str[32];
-
-  uint32_t rawTime = getEpochTime();
-  uint32_t hours = (rawTime % 86400L) / 3600;
-  uint32_t minutes = (rawTime % 3600) / 60;
-  uint32_t seconds = rawTime % 60;
-  float epochMicros = getEpochMicros() / 10e6;
-
-  if (seconds < 10) {
-    sprintf(temp_str, "%02lu:%02lu:0%.6f", hours, minutes, seconds + epochMicros);
-  } else {
-    sprintf(temp_str, "%02lu:%02lu:%.6f", hours, minutes, seconds + epochMicros);
-  }
-  
-  SerialUSB.println(temp_str);
 }
 
 void GigaNTPClient::end() {

@@ -13,7 +13,7 @@
 #define DEBUG_NTP 1
 
 // (70years * 365days/year + 17leapyears) * 86400secs/day
-#define EPOCH_OFFSET                 2208988800UL
+#define UNIX_EPOCH_OFFSET            2208988800UL
 #define NTP_PACKET_SIZE              48
 #define NTP_DEFAULT_LOCAL_PORT       1337
 #define NTP_DEFAULT_UPDATE_INTERVAL  60000
@@ -36,9 +36,12 @@ private:
    //uint32_t _currentFracOrigin     = 0;
    //float _currentFracSeconds       = 0.0;
 
-   uint32_t _lastEpochKnown        = 0;  // Overflows in 70 minutes of micros()
-   uint32_t _lastEpochSeconds      = 0;  // In s
-   uint32_t _lastEpochMicros       = 0;  // In usec
+   //uint32_t _lastEpochKnown        = 0;  // Overflows in 70 minutes of micros()
+   //uint32_t _lastEpochSeconds      = 0;  // In s
+   //uint32_t _lastEpochMicros       = 0;  // In usec
+   
+   uint32_t _lastNTPMicros         = 0;  // Time last epoch was acquired from NTP server
+   uint64_t _lastNTPEpoch          = 0;  // Time since 1/1/1900 in usec
 
    uint32_t _lastUpdate            = 0;  // In ms
    uint32_t _lastRequest           = 0;  // In ms
@@ -135,7 +138,12 @@ public:
    /**
     * @return time in seconds since Jan. 1, 1970
     */
-   unsigned long getEpochTime() const;
+   //unsigned long getEpochTime() const;
+
+   /**
+    * @return time in microseconds since Jan. 1, 1900
+    */
+   double getEpochTimeF() const;
 
    /**
     * Stops the underlying UDP client
