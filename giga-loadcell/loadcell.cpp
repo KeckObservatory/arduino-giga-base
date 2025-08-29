@@ -1,5 +1,5 @@
 /*
- * loadcell.c - implementation of a Sole Digital DRC-xT rope clamp load cell interface 
+ * loadcell.cpp - implementation of a Sole Digital DRC-xT rope clamp load cell interface 
  *
  */
 

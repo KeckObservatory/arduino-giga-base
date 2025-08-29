@@ -1,5 +1,5 @@
 /*
- * timing.h - implementation of a timer and stopwatch class
+ * timing.cpp - implementation of a timer and stopwatch class
  *
  */
 

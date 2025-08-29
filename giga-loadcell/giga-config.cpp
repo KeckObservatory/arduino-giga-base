@@ -1,5 +1,5 @@
 /*
- * giga-config.c: implementation of a configuration module for the Giga R1
+ * giga-config.cpp: implementation of a configuration module for the Giga R1
  *                supports reading a settings file from a USB filesystem 
  */
 

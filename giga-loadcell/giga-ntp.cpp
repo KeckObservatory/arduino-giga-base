@@ -1,4 +1,9 @@
 /**
+ * giga-ntp.cpp: implementation of a network time protocol client
+ *
+ * Adapted from https://github.com/arduino-libraries/NTPClient
+ *
+ *
  * The MIT License (MIT)
  * Copyright (c) 2015 by Fabrice Weinberg
  *
@@ -18,6 +23,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+
+#define GIGA_NTP_C_
 
 #include "giga-ntp.h"
 
