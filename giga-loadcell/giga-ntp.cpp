@@ -146,7 +146,7 @@ bool GigaNTPClient::update() {
       _lastNTPMicros = micros();
 
       // How long did it take to make the request?
-      uint32_t ntp_request_time = ((millis() - _lastRequest) * 1000);
+      //uint32_t ntp_request_time = ((millis() - _lastRequest) * 1000);
 
       // Bytes 40-43 are NTP time, seconds since Jan 1 1900  
       uint32_t ntp_seconds = (_packetBuffer[40] << 24) | (_packetBuffer[41] << 16) | (_packetBuffer[42] << 8) | _packetBuffer[43];
@@ -158,13 +158,27 @@ bool GigaNTPClient::update() {
       _lastNTPEpoch = ntp_seconds * 1e6;
 
       // Add the request trip time
-      _lastNTPEpoch += ntp_request_time;   // is this the right calculation?
+      //_lastNTPEpoch += ntp_request_time;   // is this the right calculation?
 
       // Bytes 44-47 the fractional seconds
       uint32_t ntp_frac_seconds = (_packetBuffer[44] << 24) | (_packetBuffer[45] << 16) | (_packetBuffer[46] << 8) | _packetBuffer[47];
 
       // Convert fractional seconds to integer microseconds and add to the epoch value
       _lastNTPEpoch += trunc((double(ntp_frac_seconds) / pow(2,32)) * 1e6);
+
+#ifdef NTP_RECV_XMIT_CALC
+      // Calculate how much time was spent at the NTP server processing our request
+      // Bytes 32-35, 36-39 are the NTP receive timestamp whole and fractional seconds
+      uint32_t ntp_recv_seconds = (_packetBuffer[32] << 24) | (_packetBuffer[33] << 16) | (_packetBuffer[34] << 8) | _packetBuffer[35];
+      ntp_recv_seconds += _timeOffset;  // Offset by our TZ so it can be compared
+      uint64_t ntp_recv_usec = ntp_recv_seconds * 1e6;
+      uint32_t ntp_recv_frac_seconds = (_packetBuffer[36] << 24) | (_packetBuffer[37] << 16) | (_packetBuffer[38] << 8) | _packetBuffer[39];
+      ntp_recv_usec += trunc((double(ntp_recv_frac_seconds) / pow(2,32)) * 1e6);
+
+      double recv_xmit_time = double(_lastNTPEpoch - ntp_recv_usec) / 1e6;
+      sprintf(message, "recv_xmit_time: %0.6f", recv_xmit_time);
+      SerialUSB.println(message);
+#endif
 
       // Offset the Unix epoch to get to the more typical time standard
       _lastNTPEpoch -= (UNIX_EPOCH_OFFSET * 1e6);
@@ -240,7 +254,6 @@ double GigaNTPClient::getEpochTimeF() const {
   if (elapsed < 0) {
     elapsed += 0x100000000;
   }
-  //TODO: deal with overflow of micros()
 
   // Add that to what time it was at sync
   uint64_t now = _lastNTPEpoch + elapsed;
@@ -272,8 +285,13 @@ int GigaNTPClient::getSeconds() const {
 
 void GigaNTPClient::printFormattedTime() {
   char temp_str[32];
+  static double rawTimePrev = 0;
 
   double rawTime = getEpochTimeF();
+  
+  double rawTimePrevDelta = rawTime - rawTimePrev;
+  rawTimePrev = rawTime;
+
   uint32_t rawTimeT = trunc(rawTime);
   double rawTimeFrac = rawTime - rawTimeT;
 
@@ -282,9 +300,9 @@ void GigaNTPClient::printFormattedTime() {
   uint32_t seconds = rawTimeT % 60;
   
   if (seconds < 10) {
-    sprintf(temp_str, "%02lu:%02lu:0%.6f", hours, minutes, seconds + rawTimeFrac);
+    sprintf(temp_str, "%02lu:%02lu:0%.6f  +%0.6f", hours, minutes, seconds + rawTimeFrac, rawTimePrevDelta);
   } else {
-    sprintf(temp_str, "%02lu:%02lu:%.6f", hours, minutes, seconds + rawTimeFrac);
+    sprintf(temp_str, "%02lu:%02lu:%.6f  +%0.6f", hours, minutes, seconds + rawTimeFrac, rawTimePrevDelta);
   }
   
   SerialUSB.println(temp_str);

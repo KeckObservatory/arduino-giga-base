@@ -12,6 +12,16 @@
 // Define this to 1 for debug messaging
 #define DEBUG_NTP 1
 
+#define NTP_INTERVAL                 1000
+#define HST_OFFSET                   (-10*3600)
+
+#define NTP_UPDATE_INTERVAL          15000
+#define NTP_SERVER                   "128.171.136.15"
+#define NTP_SERVER_UNK               "128.171.3.3"
+
+// irtfgps1.ifa.hawaii.edu
+#define NTP_SERVER_IRTF              "128.171.165.26"  
+
 // (70years * 365days/year + 17leapyears) * 86400secs/day
 #define UNIX_EPOCH_OFFSET            2208988800UL
 #define NTP_PACKET_SIZE              48
