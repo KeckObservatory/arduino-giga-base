@@ -48,25 +48,12 @@ All combined, this allows a user to display the tension on a wire rope (such as 
 
 Source code for this project is located at <https://github.com/KeckObservatory/arduino-giga-base> under the `giga-loadcell` directory.  This document also originates from that GitHub repository.
 
-The Arudino IDE 2.x is used for building this project.  Install these libraries via the Library Manager.  As of August 2025, the ETL library must be updated manually to enable support for the `etl::unordered_map` feature.
+The Arudino IDE 2.x is used for building this project.  Install these libraries via the Library Manager.  
 
   a) Arduino Mbed OS GIGA Boards (board support package, also provides SPI library)
   b) Ethernet 
   c) Arduino_USBHostMbed5
-  d) [Embedded Template Library](https://www.etlcpp.com/) <span style="color: red;">v20.42.2</span> or later.  <i>Critically, this version is not the one that can be downloaded automatically in the Arduino IDE (as of August 2025 the version offered in the IDE is v20.40.0) and it must be updated by hand modifying your library installation.</i>
-
-To install an up-to-date ETL library:
-
-1) Install the latest version of "Embedded Template Library ETL by John Wellbelove" that the Arduino IDE will offer you.  If the version has since been updated to 20.42.2 or later in the Library Manager, stop here as there is nothing else to do.
-1) Download the ZIP file of the latest ETL code from https://github.com/ETLCPP/etl/releases
-1) Unzip the latest package to a temporary directory.
-1) Open the directory that contains the source code for the old ETL.  On MacOS it is contained in `Documents/Arduino/libraries/Embedded_Template_Library_ETL`
-1) Replace the file `Documents/.../Embedded_Template_Library_ETL/src/library.json` with `arduino/library-arduino.json` from the ZIP, but rename the file to remove the `-arduino` part.
-1) Replace the file `Documents/.../Embedded_Template_Library_ETL/src/library.properties` with `arduino/library-arduino.properties` from the ZIP, but rename the file to remove the `-arduino` part.
-1) Replace the file `Documents/.../Embedded_Template_Library_ETL/src/Embedded_Template_Library.h` with `arduino/Embedded_Template_Library.h` from the ZIP.
-1) Replace the directory `Documents/.../Embedded_Template_Library_ETL/src/etl` with `arduino/include/etl` from the ZIP.
-
-After you do this, the `giga-loadcell.ino` sketch should be able to compile in the Arduino IDE.
+  d) [Embedded Template Library](https://www.etlcpp.com/)
 
 ## Developer Quickstart
 
