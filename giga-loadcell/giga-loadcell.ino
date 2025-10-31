@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include <arduino.h>
+#include <mbed.h>
 #include <SPI.h>
 #include <Ethernet.h>
 
@@ -26,15 +27,15 @@ GigaLED led;
 GigaStorage storage;
 GigaConfig config(storage);
 GigaEthernet ethernet(config);
-GigaNTPClient ntp(ethernet.udp, NTP_SERVER, HST_OFFSET, NTP_UPDATE_INTERVAL);
 Loadcell loadcell;
 Timer client_message_timer(100);  // 100ms between outbound messages (10Hz)
-Timer ntpTimer(NTP_INTERVAL);
 
 // The processor universal ID
 uint8_t uid[12];
 
 void setup() {
+
+  pinMode(53, OUTPUT);  
 
   // Hold off on setup for two seconds to allow the USB port to connect to the PC, if one is present
   delay(2000);
@@ -81,10 +82,6 @@ void setup() {
     SerialUSB.println(">>> HALTING FOR FAILURE <<<");
     while (1) led.panic();  
   }
-
-  // Demo the NTP interface
-  ntp.begin();
-
   // Setup the load cell interface 
   // CRITICAL NOTE: This must be done _after_ the Ethernet device setup due to some not-yet-understood
   // conflict between the devices!
@@ -96,7 +93,6 @@ void setup() {
 
   SerialUSB.println(">>> Initialization complete.");
 }
-
 
 
 char client_buffer[128] = {0};
@@ -112,14 +108,6 @@ void loop() {
 
   // Perform the ethernet connection management
   ethernet.loop();
-
-  // Run the NTP state machine
-  ntp.update();
-  if (ntpTimer.done()) {
-    ntpTimer.resume();
-
-    ntp.printFormattedTime();
-  }
 
   // Once a second emit the device status
   if (client_message_timer.done()) {

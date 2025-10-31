@@ -35,7 +35,9 @@ const char registry_net_ip[]          = "net.ip";
 const char registry_net_netmask[]     = "net.netmask";
 const char registry_net_gateway[]     = "net.gateway";
 const char registry_net_dns[]         = "net.dns";
-const char registry_cal_placeholder[] = "cal.placeholder";
+const char registry_sensor_sn[]       = "sensor.sn";  // Load cell serial number
+const char registry_cal_slope[]       = "cal.slope";  // Load cell calibration slope calculated from calibration data provided by vendor
+const char registry_cal_const[]       = "cal.const";  // Load cell calibration constant
 
 // Define which keys _must_ exist in the registry (and therefore flash) for normal operation
 #define REGISTRY_REQUIRED_KEYS { registry_tdb_initialized, registry_net_ip, registry_net_netmask, registry_net_gateway, registry_net_dns }

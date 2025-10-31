@@ -17,7 +17,6 @@
 
 #include "timing.h"
 #include "giga-config.h"
-#include "giga-ntp.h"
 
 // Use standard telnet port 23 since the protocol is human readable
 #define ETHERNET_LISTEN_PORT 23
