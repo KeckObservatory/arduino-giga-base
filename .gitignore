@@ -1,6 +1,14 @@
 # MacOS stuff
 .DS_Store
 
+# IDEs
+.idea/
+.vscode/
+.theia/
+
+# Backups
+~*
+
 # Prerequisites
 *.d
 
@@ -42,3 +50,4 @@
 
 # debug information files
 *.dwo
+giga-loadcell/.vscode/.cortex-debug.registers.state.json
