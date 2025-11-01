@@ -58,7 +58,7 @@ with open(filename, "r") as file:
             continue
 
         if line.startswith('SN'):
-            match = re.match('SN\s+(\d+)', line)
+            match = re.match(r'SN\s+(\d+)', line)
             if match:
                 serial_number = match.group(1)
                 continue
@@ -67,7 +67,7 @@ with open(filename, "r") as file:
                 sys.exit(1)
 
         # Process lines that are simply two numbers
-        match = re.match('(\d+)\s+(\d+)', line)
+        match = re.match(r'(\d+)\s+(\d+)', line)
         if match:
             x.append(float(match.group(1)))
             y.append(float(match.group(2)))

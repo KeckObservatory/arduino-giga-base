@@ -155,9 +155,9 @@ GigaStorage::rc_usb GigaStorage::usb_file_load(char* buffer, uint32_t* buffer_le
 
   char error_text[128];
 
-  // There is a race condition for connecting to the USB subsystem.  Give it 10 tries with 100ms
+  // There is a race condition for connecting to the USB subsystem.  Give it 50 tries with 100ms
   // delay between them, and msd.connect() will eventually succeed.
-  int8_t retries = 10;
+  int8_t retries = 50;
 
   while (retries > 0) {
     if (!msd.connect()) {    

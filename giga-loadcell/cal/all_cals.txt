@@ -1,0 +1,35 @@
+sensor.sn = 2623
+cal.slope = 0.00553
+cal.const = -284.7
+
+sensor.sn = 2633
+cal.slope = 0.005587
+cal.const = -259.5
+
+sensor.sn = 2636
+cal.slope = 0.005424
+cal.const = -269.6
+
+sensor.sn = 2638
+cal.slope = 0.005769
+cal.const = -256.4
+
+sensor.sn = 2646
+cal.slope = 0.005515
+cal.const = -188.1
+
+sensor.sn = 2665
+cal.slope = 0.005509
+cal.const = -223.7
+
+sensor.sn = 2666
+cal.slope = 0.005434
+cal.const = -262.7
+
+sensor.sn = 2667
+cal.slope = 0.005508
+cal.const = -315
+
+sensor.sn = 2668
+cal.slope = 0.005525
+cal.const = -206.2
