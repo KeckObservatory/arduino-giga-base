@@ -27,7 +27,7 @@ GigaLED led;
 GigaStorage storage;
 GigaConfig config(storage);
 GigaEthernet ethernet(config);
-Loadcell loadcell;
+Loadcell loadcell(config);
 Timer client_message_timer(100);  // 100ms between outbound messages (10Hz)
 
 // The processor universal ID
@@ -116,7 +116,7 @@ void loop() {
     loop_count++;
 
     // Build the outbound message.  Send the load as both hex values and base 10.
-    sprintf(client_buffer, "%08lX;%d;%0lX;%li\n", loop_count, loadcell.connected, loadcell.load, loadcell.load);
+    sprintf(client_buffer, "%08lX;%d;%d;%0lX;%li:%01f\n", loop_count, loadcell.connected, loadcell.sn, loadcell.load, loadcell.load, loadcell.kg);
   
     // Send the outbound message to all clients
     ethernet.send_all(client_buffer);

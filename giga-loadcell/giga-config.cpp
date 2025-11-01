@@ -259,7 +259,7 @@ GigaConfig::rc GigaConfig::registry_load() {
     } else if (mbed_err == MBED_SUCCESS) {
 
       // Found the key, does it need updating?
-      if (strcmp(value.c_str(), stored_value) > 0) {
+      if (strcmp(value.c_str(), stored_value) != 0) {
 
         sprintf(message_text, "[CFG] Key %s found in registry (len %d), value update: %s -> %s", key.c_str(), retrieved_length, stored_value, value.c_str());
         SerialUSB.println(message_text);

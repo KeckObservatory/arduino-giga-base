@@ -6,6 +6,7 @@
 #define LOADCELL_CPP_
 
 #include "loadcell.h"
+#include <etl/to_arithmetic.h>
 
 void Loadcell::setup() {
   int led = 13;
@@ -39,6 +40,16 @@ void Loadcell::setup() {
   connected = false;
 
   char_count = 0;
+
+  // Get the registry values for use with this load cell
+  KVStringRC registry_sn = config.registry_get(registry_sensor_sn);
+  KVStringRC registry_slope = config.registry_get(registry_cal_slope);
+  KVStringRC registry_const = config.registry_get(registry_cal_const);
+ 
+  // Convert from strings to numeric types
+  sn = etl::to_arithmetic<uint32_t>(registry_sn.second, 10);
+  cal_slope = etl::to_arithmetic<float>(registry_slope.second);
+  cal_const = etl::to_arithmetic<float>(registry_const.second);
 }
 
 void Loadcell::loop() {
@@ -82,6 +93,9 @@ void Loadcell::loop() {
           // Load the values into the top 3 bytes of a 32 bit signed integer.  Then, shift it
           // to the right by 8 bits, to cause sign extension and get back our 24 bit signed int.
           load = ((buffer[1] << 24) + (buffer[2] << 16) + (buffer[3] << 8)) >> 8;
+
+          // Convert the ADC value to kilograms
+          kg = (cal_slope*load) + cal_const;
           
           // When a message is valid, we are connected
           connected = true;

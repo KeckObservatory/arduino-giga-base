@@ -40,7 +40,7 @@ const char registry_cal_slope[]       = "cal.slope";  // Load cell calibration s
 const char registry_cal_const[]       = "cal.const";  // Load cell calibration constant
 
 // Define which keys _must_ exist in the registry (and therefore flash) for normal operation
-#define REGISTRY_REQUIRED_KEYS { registry_tdb_initialized, registry_net_ip, registry_net_netmask, registry_net_gateway, registry_net_dns }
+#define REGISTRY_REQUIRED_KEYS { registry_tdb_initialized, registry_net_ip, registry_net_netmask, registry_net_gateway, registry_net_dns, registry_sensor_sn, registry_cal_slope, registry_cal_const }
 
 class GigaConfig {
 private:
