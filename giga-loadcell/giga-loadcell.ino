@@ -22,6 +22,9 @@
 #include "giga-config.h"
 #include "loadcell.h"
 
+// Code versioning
+#define GIGA_VERSION "1-0-0"
+
 // Instances of the classes needed to run the LED, USB, registry, network, and load cell 
 GigaLED led;
 GigaStorage storage;
@@ -116,7 +119,7 @@ void loop() {
     loop_count++;
 
     // Build the outbound message.  Send the load as both hex values and base 10.
-    sprintf(client_buffer, "%08lX;%d;%d;%0lX;%li:%01f\n", loop_count, loadcell.connected, loadcell.sn, loadcell.load, loadcell.load, loadcell.kg);
+    sprintf(client_buffer, "%08lX;%s;%d;%d;%0lX;%li;%01f\n", loop_count, GIGA_VERSION, loadcell.connected, loadcell.sn, loadcell.load, loadcell.load, loadcell.kg);
   
     // Send the outbound message to all clients
     ethernet.send_all(client_buffer);
