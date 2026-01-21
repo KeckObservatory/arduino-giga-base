@@ -8,7 +8,6 @@
 import os
 import coloredlogs, logging
 import argparse
-import collections
 import traceback
 from concurrent import futures
 from threading import Lock, Event
@@ -16,13 +15,6 @@ import datetime
 import SerialStream
 
 from softioc import softioc, builder
-
-try:
-    import epicscorelibs.path.pyepics
-except ImportError:
-    pass
-import epics
-
 
 # Default port for devices
 LOADCELL_DEFAULT_PORT = 23
