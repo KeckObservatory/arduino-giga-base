@@ -30,6 +30,15 @@ LOADCELL_DEFAULT_PORT = 23
 # How long between reconnection messages, in minutes?
 RECONNECT_LOG_INTERVAL = 10
 
+# Channel suffixes
+CHANNEL_CONNECTED = 'connected'
+CHANNEL_UPTIME = 'uptime'
+CHANNEL_LOAD = 'load'
+CHANNEL_LOAD_RAW = 'load_raw'
+CHANNEL_VERSION = 'version'
+CHANNEL_SN = 'sn'
+
+# Global debug flag
 debug = False
 
 class ChannelCreateException(BaseException):
@@ -90,9 +99,12 @@ class DRCxT:
     """
     Main class for DRC-xT load cell
     """
-    ioc_channels = [ ('connected', bool),
-                     ('uptime', int),
-                     ('load', int),
+    ioc_channels = [ (CHANNEL_CONNECTED, bool),
+                     (CHANNEL_UPTIME, int),
+                     (CHANNEL_LOAD, float),
+                     (CHANNEL_LOAD_RAW, int),
+                     (CHANNEL_VERSION, str),
+                     (CHANNEL_SN, str),
                      ]
 
     def __init__(self, prefix, address, log):
@@ -218,10 +230,14 @@ class DRCxT:
         try:
             # Look for the data stream
             message = self.stream.receive(delimiter=b'\n', strip=True, timeout=self.timeout)
-            uptime, connected, _, load = message.decode('UTF-8').split(';')
+            loop_count, GIGA_VERSION, loadcell_connected, loadcell_sn, loadcell_load_hex, loadcell_load_int, loadcell_kg = message.decode('UTF-8').split(';')
 
-            self.channels[f'uptime'].set(int(uptime, 16))
-            self.channels[f'load'].set(int(load))
+            self.channels[CHANNEL_CONNECTED].set(bool(int(loadcell_connected)))
+            self.channels[CHANNEL_VERSION].set(GIGA_VERSION)
+            self.channels[CHANNEL_SN].set(loadcell_sn)
+            self.channels[CHANNEL_LOAD].set(float(loadcell_kg))
+            self.channels[CHANNEL_LOAD_RAW].set(int(loadcell_load_int))
+            self.channels[CHANNEL_UPTIME].set(int(loop_count, 16))
 
         except Exception as e:
             log.critical(f'Load cell messaging failed: {e}')
@@ -236,7 +252,7 @@ class DRCxT:
                 self.stream = None
 
     @property
-    def stopping(self): return self._stop.isSet()
+    def stopping(self): return self._stop.is_set()
 
     def stop(self):
         self._stop.set()
@@ -268,7 +284,7 @@ if __name__ == "__main__":
     # Commandline arguments
     parser = argparse.ArgumentParser(description='Sole Digital DRC-xT rope clamp load cell IOC')
     parser.add_argument('-d', '--debug', help='Enable debugging output', action='store_true')
-    parser.add_argument('-ioc', '--ioc', help='IOC prefix (e.g. k1:tcs:dom)', required=True, type=str, default='k1:tcs:dom')
+    parser.add_argument('-ioc', '--ioc', help='IOC prefix (e.g. k1:dcs:dom)', required=True, type=str, default='k1:dcs:dom')
     parser.add_argument('-addr', '--addr', help='Load cell device IP address (e.g. 10.96.15.32:502)', required=True, type=str)
     parser.add_argument('-iocport', '--iocport', help='IOC port', required=True, type=str)
     args = parser.parse_args()
