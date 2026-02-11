@@ -56,6 +56,7 @@ void Loadcell::loop() {
   uint8_t i;
   int8_t count;
   uint8_t checksum;
+  static uint8_t chars_since_good = 0;
 
   // Run the communications to the load cell device
 
@@ -72,6 +73,9 @@ void Loadcell::loop() {
 
   if (count > 0) {
 
+    // Count the number of characters since we had a good value
+    chars_since_good++;
+
     for (i = 0; i < count; i++) {
 
       uint8_t temp = Serial1.read();
@@ -84,7 +88,10 @@ void Loadcell::loop() {
       buffer[4] = temp;
   
       // Test the 0th byte, is it the start of message?
-      if (buffer[0] == LOADCELL_PREFIX_CHAR) {
+      //
+      // And, have enough bytes come through since the last good value that we won't 
+      // be fooled by a 0xAA appearing in the data randomly?
+      if ((buffer[0] == LOADCELL_PREFIX_CHAR) && (chars_since_good > 4)) {
 
         // Verify the checksum, which will now be in position 4
         checksum = (buffer[1] + buffer[2] + buffer[3]) & 0x0000FF;
@@ -100,6 +107,9 @@ void Loadcell::loop() {
           // When a message is valid, we are connected
           connected = true;
           timeout.start();
+
+          // Reset the counter now that we have a good value
+          chars_since_good = 0;
         }
 
       }
