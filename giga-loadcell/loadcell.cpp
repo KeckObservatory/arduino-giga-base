@@ -10,7 +10,6 @@
 
 void Loadcell::setup() {
   int led = 13;
-  int EN = 2;
 
   // Zero out the incoming message buffer
   bzero(buffer, LOADCELL_MAX_BUFFER);
@@ -28,12 +27,15 @@ void Loadcell::setup() {
   pinMode(led, OUTPUT);
   digitalWrite(led, 1);
 
-  pinMode(EN, OUTPUT);
-  digitalWrite(EN, HIGH);
+  // Setup the enable pin for the DFRobot 485 shield and turn it on
+  pinMode(RS485_SHIELD_ENABLE, OUTPUT);
+  set_485_shield_enable(true);
 
   // Flush the buffer before first use  
   Serial1.flush();
 
+  // Init the state machine
+  lc_state = LC_STATE_IDLE;
 
   // Start the timeout timer
   timeout.start();
@@ -53,10 +55,13 @@ void Loadcell::setup() {
 }
 
 void Loadcell::loop() {
+
+  char message_text[128];
   uint8_t i;
   int8_t count;
   uint8_t checksum;
   static uint8_t chars_since_good = 0;
+  static uint32_t fault_count = 0;
 
   // Run the communications to the load cell device
 
@@ -67,64 +72,125 @@ void Loadcell::loop() {
   //    0x??        - bits 7-0 of load value
   //    0x??        - sum (checksum) of previous three bytes
 
-  // Accumulate characters into a rolling buffer
-  count = Serial1.available();
-  char_count += count;
+  switch (lc_state) {
 
-  if (count > 0) {
+    case LC_STATE_IDLE:
 
-    // Count the number of characters since we had a good value
-    chars_since_good++;
+      // Start off not connected
+      connected = false;
 
-    for (i = 0; i < count; i++) {
+      // Start the messaging timer
+      timeout.start();
 
-      uint8_t temp = Serial1.read();
-    
-      // Shift each char in the buffer to the left
-      buffer[0] = buffer[1];
-      buffer[1] = buffer[2];
-      buffer[2] = buffer[3];
-      buffer[3] = buffer[4];
-      buffer[4] = temp;
-  
-      // Test the 0th byte, is it the start of message?
-      //
-      // And, have enough bytes come through since the last good value that we won't 
-      // be fooled by a 0xAA appearing in the data randomly?
-      if ((buffer[0] == LOADCELL_PREFIX_CHAR) && (chars_since_good > 4)) {
+      // fall immediately into run state, no break needed
+      lc_state = LC_STATE_RUN;
 
-        // Verify the checksum, which will now be in position 4
-        checksum = (buffer[1] + buffer[2] + buffer[3]) & 0x0000FF;
-        if (checksum == buffer[4]) {
-
-          // Load the values into the top 3 bytes of a 32 bit signed integer.  Then, shift it
-          // to the right by 8 bits, to cause sign extension and get back our 24 bit signed int.
-          load = ((buffer[1] << 24) + (buffer[2] << 16) + (buffer[3] << 8)) >> 8;
-
-          // Convert the ADC value to kilograms
-          kg = (cal_slope*load) + cal_const;
+    case LC_STATE_RUN:
           
-          // When a message is valid, we are connected
-          connected = true;
-          timeout.start();
+      // Accumulate characters into a rolling buffer
+      count = Serial1.available();
+      char_count += count;
 
-          // Reset the counter now that we have a good value
-          chars_since_good = 0;
+      if (count > 0) {
+
+        // Count the number of characters since we had a good value
+        chars_since_good++;
+
+        for (i = 0; i < count; i++) {
+
+          uint8_t temp = Serial1.read();
+        
+          // Shift each char in the buffer to the left
+          buffer[0] = buffer[1];
+          buffer[1] = buffer[2];
+          buffer[2] = buffer[3];
+          buffer[3] = buffer[4];
+          buffer[4] = temp;
+      
+          // Test the 0th byte, is it the start of message?
+          //
+          // And, have enough bytes come through since the last good value that we won't 
+          // be fooled by a 0xAA appearing in the data randomly?
+          if ((buffer[0] == LOADCELL_PREFIX_CHAR) && (chars_since_good > 4)) {
+
+            // Verify the checksum, which will now be in position 4
+            checksum = (buffer[1] + buffer[2] + buffer[3]) & 0x0000FF;
+            if (checksum == buffer[4]) {
+
+              // Load the values into the top 3 bytes of a 32 bit signed integer.  Then, shift it
+              // to the right by 8 bits, to cause sign extension and get back our 24 bit signed int.
+              load = ((buffer[1] << 24) + (buffer[2] << 16) + (buffer[3] << 8)) >> 8;
+
+              // Convert the ADC value to kilograms
+              kg = (cal_slope*load) + cal_const;
+              
+              // When a message is valid, we are connected, restart the timer!
+              connected = true;
+              timeout.start();
+
+              // Reset the counter now that we have a good value
+              chars_since_good = 0;
+            }
+          }
         }
-
       }
 
-    }
+      // Look for timeout conditions
+      if (timeout.done()) {
+  
+        // The load cell has timed out. It is possible that the RS485 shield is faulted. Toggle the enable to it
+        // to try to clear the fault.
+        lc_state = LC_STATE_FAULT;
+      }
+
+      break;
+
+    case LC_STATE_FAULT:
+
+      fault_count++;
+
+      sprintf(message_text, "[LC] Load cell faulted! (%ld)", fault_count);
+      SerialUSB.println(message_text);
+
+      // Faulted, so we are not connected
+      connected = false;
+
+      // Start the reset process
+      set_485_shield_enable(false);
+      shield_reset_timer.start();      
+
+      // Reset the shield
+      lc_state = LC_STATE_RESET;
+      break;
+
+    case LC_STATE_RESET:
+
+      // When reset is complete, turn the 485 enable back on
+      if (shield_reset_timer.done()) {
+
+        sprintf(message_text, "[LC] RS485 shield reset complete.");
+        SerialUSB.println(message_text);
+
+        set_485_shield_enable(true);
+
+        // Back to run to start over again
+        lc_state = LC_STATE_IDLE;
+
+      }
+      break;
 
   }
+}
 
-  // Look for timeout conditions
-  if (timeout.done()) {
+void Loadcell::set_485_shield_enable(bool enable) {
 
-    connected = false;
+  // Turn on or off the 485 shield EN signal on I/O 2.  Signal is active LOW.
+  // This enable only works when the shield is physically switched to "MANU"!
+  if (enable) {
+    digitalWrite(RS485_SHIELD_ENABLE, LOW);
+  } else {
+    digitalWrite(RS485_SHIELD_ENABLE, HIGH);
   }
-
-
 }
 
 
