@@ -29,6 +29,9 @@ GigaEthernet::rc_ethernet GigaEthernet::setup() {
   mac[3] = (low_mac >> 2) & 0xFF;
   mac[4] = (low_mac >> 1) & 0xFF;
   mac[5] = (low_mac     ) & 0xFF;
+
+  sprintf(message_text, "[ETH] MAC address %02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  SerialUSB.println(message_text);
  
   // The registry entries for these 4 settings are guaranteed to exist because they are listed in the
   // REGISTRY_REQUIRED_KEYS define in giga-config.cpp.
@@ -62,8 +65,11 @@ GigaEthernet::rc_ethernet GigaEthernet::setup() {
   }
   
   // Start listening for clients
-  SerialUSB.println("[ETH] Starting TCP/IP server.");
-  server.begin();
+  SerialUSB.println("[ETH] Starting TCP/IP server(s).");
+  ioc_server.begin();
+  
+  // 2026-03-03 prichards: control server feature not ready for deployment yet
+  //control_server.begin();
 
   // Return success
   return GigaEthernet::rc_ethernet::ETHER_NO_ERROR;
@@ -74,37 +80,83 @@ GigaEthernet::rc_ethernet GigaEthernet::setup() {
  ******************************************************************************************************************************/
 void GigaEthernet::loop() {
 
+  char client_buffer[128] = {0};
+
   // This value is never actually used but we need it to consume any data coming from the clients,
   // which are ignored for the load cell implementation.
   volatile char __attribute__((unused)) dummy;
 
-  // Check for any new client connecting
-  EthernetClient newClient = server.accept();
-  if (newClient) {
-    for (byte i = 0; i < 8; i++) {
-      if (!clients[i]) {
+  // Check for any new client connecting to the IOC server
+  EthernetClient new_client = ioc_server.accept();
+  if (new_client) {
+    for (byte i = 0; i < MAX_CLIENTS; i++) {
+      if (!ioc_clients[i]) {
 
         // Once we "accept", the client is no longer tracked by EthernetServer
         // so we must store it into our list of clients
-        clients[i] = newClient;
+        ioc_clients[i] = new_client;
         break;
       }
     }
   }
 
+  // Check for any new client connecting to the control server
+  // 2026-03-03 prichards: control server not ready yet
+#ifdef CONTROL_SERVER
+  EthernetClient new_control_client = control_server.accept();
+  if (new_control_client) {
+    for (byte i = 0; i < MAX_CLIENTS; i++) {
+      if (!control_clients[i]) {
+
+        // Once we "accept", the client is no longer tracked by EthernetServer
+        // so we must store it into our list of clients
+        control_clients[i] = new_control_client;
+        break;
+      }
+    }
+  }
+#endif
+
+
+
   // Check for incoming data from all clients and throw it away, as it is not needed
-  for (byte i = 0; i < 8; i++) {
-    while (clients[i] && clients[i].available() > 0) {
+  for (byte i = 0; i < MAX_CLIENTS; i++) {
+    while (ioc_clients[i] && ioc_clients[i].available() > 0) {
 
       // read incoming data from the client into a variable but do nothing with it
-      dummy = clients[i].read();
+      dummy = ioc_clients[i].read();
     }
   }
 
   // stop any clients which disconnect
-  for (byte i = 0; i < 8; i++) {
-    if (clients[i] && !clients[i].connected()) {
-      clients[i].stop();
+  for (byte i = 0; i < MAX_CLIENTS; i++) {
+    if (ioc_clients[i] && !ioc_clients[i].connected()) {
+      ioc_clients[i].stop();
+    }
+
+    // 2026-03-03 prichards: control server not ready yet
+#ifdef CONTROL_SERVER    
+    if (control_clients[i] && !control_clients[i].connected()) {
+      control_clients[i].stop();
+    }
+#endif
+
+  }
+
+}
+
+
+/******************************************************************************************************************************
+ * @brief Send to every connected IOC client the contents of a buffer.
+ *
+ * @param[in]  buf                  The (string) contents to send.
+ ******************************************************************************************************************************/
+void GigaEthernet::ioc_send_all(char *buf) {
+
+  for (uint8_t i = 0; i < MAX_CLIENTS; i++) {
+    if (ioc_clients[i] && ioc_clients[i].connected()) {
+      // Send to every connected client
+      ioc_clients[i].print(buf);
     }
   }
 
@@ -112,19 +164,20 @@ void GigaEthernet::loop() {
 
 
 /******************************************************************************************************************************
- * @brief Send every connected client the contents of a buffer.
+ * @brief Send to a particular connected control client the contents of a buffer.
  *
  * @param[in]  buf                  The (string) contents to send.
  ******************************************************************************************************************************/
-void GigaEthernet::send_all(char *buf) {
+void GigaEthernet::control_send(uint8_t client_index, char *buf) {
 
-  for (byte i = 0; i < 8; i++) {
-    if (clients[i] && clients[i].connected()) {
-      // Send to every connected client
-      clients[i].print(buf);
-    }
+// 2026-03-03 prichards: control server not ready yet
+#ifdef CONTROL_SERVER
+  if (control_clients[client_index] && control_clients[client_index].connected()) {
+
+    // Send to connected control client
+    control_clients[client_index].print(buf);
   }
-
+#endif
 }
 
 

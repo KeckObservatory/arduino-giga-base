@@ -121,8 +121,8 @@ void loop() {
     // Build the outbound message.  Send the load as both hex values and base 10.
     sprintf(client_buffer, "%08lX;%s;%d;%d;%li;%0lX;%li;%01f\n", loop_count, GIGA_VERSION, loadcell.connected, loadcell.sn, loadcell.char_count, loadcell.load, loadcell.load, loadcell.kg);
   
-    // Send the outbound message to all clients
-    ethernet.send_all(client_buffer);
+    // Send the outbound message to all IOC clients
+    ethernet.ioc_send_all(client_buffer);
   }
 
 }
