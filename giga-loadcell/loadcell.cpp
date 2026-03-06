@@ -158,6 +158,7 @@ void Loadcell::loop() {
       // Start the reset process
       set_485_shield_enable(false);
       shield_reset_timer.start();      
+      Serial1.end();
 
       // Reset the shield
       lc_state = LC_STATE_RESET;
@@ -172,6 +173,20 @@ void Loadcell::loop() {
         SerialUSB.println(message_text);
 
         set_485_shield_enable(true);
+
+        // Reset the serial port device
+        bzero(buffer, LOADCELL_MAX_BUFFER);
+        char_count = 0;
+
+        // Open serial communications and wait for port to open
+        Serial1.begin(LOADCELL_BAUD_RATE);
+
+        while (!Serial1) {
+          ; // wait for RS485 serial port to connect
+        }
+
+        // Flush the buffer before next use  
+        Serial1.flush();
 
         // Back to run to start over again
         lc_state = LC_STATE_IDLE;

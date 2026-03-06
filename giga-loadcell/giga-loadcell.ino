@@ -18,23 +18,27 @@
 #include "giga-types.h"
 #include "giga-led.h"  
 #include "giga-ethernet.h"  
+#include "giga-control.h"
 #include "giga-storage.h"
 #include "giga-config.h"
 #include "loadcell.h"
 
-// Code versioning
-#define GIGA_VERSION "1-0-1" 
+// Code versioning as of 2026-03-0x
+#define GIGA_VERSION "1-0-3" 
 
 // Instances of the classes needed to run the LED, USB, registry, network, and load cell 
 GigaLED led;
 GigaStorage storage;
 GigaConfig config(storage);
 GigaEthernet ethernet(config);
+GigaControl control(config);
 Loadcell loadcell(config);
 Timer client_message_timer(100);  // 100ms between outbound messages (10Hz)
 
 // The processor universal ID
 uint8_t uid[12];
+
+void(* resetFunc) (void) = 0;  // Declare function at address 0 which will effectively reboot the Arduino
 
 void setup() {
 
@@ -94,6 +98,9 @@ void setup() {
   // Start the timer for emitting messages back to the client(s)
   client_message_timer.start();
 
+  // Setup the control interface
+  control.setup();
+
   SerialUSB.println(">>> Initialization complete.");
 }
 
@@ -111,6 +118,9 @@ void loop() {
 
   // Perform the ethernet connection management
   ethernet.loop();
+
+  // Perform the control messaging from connected clients
+  control.loop();
 
   // Once a second emit the device status
   if (client_message_timer.done()) {

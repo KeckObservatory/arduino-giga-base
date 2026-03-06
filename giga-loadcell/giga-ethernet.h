@@ -17,6 +17,7 @@
 
 #include "timing.h"
 #include "giga-config.h"
+#include "giga-control.h"
 
 // Use standard telnet port 23 for the IOC, since the protocol is human readable
 #define ETHERNET_IOC_PORT 23
@@ -42,9 +43,8 @@ class GigaEthernet {
     EthernetClient ioc_clients[MAX_CLIENTS];
 
     // A control server and clients
-    // 2026-03-03 prichards: control server not ready yet
-    //EthernetServer control_server;
-    //EthernetClient control_clients[MAX_CLIENTS];
+    EthernetServer control_server;
+    EthernetClient control_clients[MAX_CLIENTS];
 
     // Magic numbers for 32-bit hashing, used in the MAC address routines below
     const uint32_t c1 = 0xcc9e2d51;
@@ -69,8 +69,7 @@ class GigaEthernet {
 
     GigaEthernet(GigaConfig& the_config) : config(the_config), 
                                            ioc_server(ETHERNET_IOC_PORT), 
-                                           // 2026-03-03 prichards: control server not ready yet
-                                           //control_server(ETHERNET_CONTROL_PORT),
+                                           control_server(ETHERNET_CONTROL_PORT),
                                            udp() {}
 
     GigaEthernet::rc_ethernet setup();

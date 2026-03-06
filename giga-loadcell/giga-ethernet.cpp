@@ -67,9 +67,7 @@ GigaEthernet::rc_ethernet GigaEthernet::setup() {
   // Start listening for clients
   SerialUSB.println("[ETH] Starting TCP/IP server(s).");
   ioc_server.begin();
-  
-  // 2026-03-03 prichards: control server feature not ready for deployment yet
-  //control_server.begin();
+  control_server.begin();
 
   // Return success
   return GigaEthernet::rc_ethernet::ETHER_NO_ERROR;
@@ -101,8 +99,6 @@ void GigaEthernet::loop() {
   }
 
   // Check for any new client connecting to the control server
-  // 2026-03-03 prichards: control server not ready yet
-#ifdef CONTROL_SERVER
   EthernetClient new_control_client = control_server.accept();
   if (new_control_client) {
     for (byte i = 0; i < MAX_CLIENTS; i++) {
@@ -115,9 +111,6 @@ void GigaEthernet::loop() {
       }
     }
   }
-#endif
-
-
 
   // Check for incoming data from all clients and throw it away, as it is not needed
   for (byte i = 0; i < MAX_CLIENTS; i++) {
@@ -134,12 +127,9 @@ void GigaEthernet::loop() {
       ioc_clients[i].stop();
     }
 
-    // 2026-03-03 prichards: control server not ready yet
-#ifdef CONTROL_SERVER    
     if (control_clients[i] && !control_clients[i].connected()) {
       control_clients[i].stop();
     }
-#endif
 
   }
 
@@ -170,14 +160,11 @@ void GigaEthernet::ioc_send_all(char *buf) {
  ******************************************************************************************************************************/
 void GigaEthernet::control_send(uint8_t client_index, char *buf) {
 
-// 2026-03-03 prichards: control server not ready yet
-#ifdef CONTROL_SERVER
   if (control_clients[client_index] && control_clients[client_index].connected()) {
 
     // Send to connected control client
     control_clients[client_index].print(buf);
   }
-#endif
 }
 
 
