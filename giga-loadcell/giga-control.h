@@ -20,11 +20,19 @@
 #define CONTROL_MSG_STX  0x02
 #define CONTROL_MSG_ETX  0x03
 
+#define REBOOT_COUNTDOWN 1000 // ms
+
 class GigaControl {
 
   private:
   	// Hold a reference to the config subsystem
 	  GigaConfig& config;
+
+    bool response_ready;
+    uint8_t response_client_id;
+
+    bool reboot_flag;
+    Timer rebootTimer;
 
   public:
 
@@ -36,12 +44,16 @@ class GigaControl {
     enum rc : uint8_t {
         CONTROL_NO_ERROR = 0,
         CONTROL_INVALID_COMMAND,
+        CONTROL_RESPONSE_NONE,
+        CONTROL_RESPONSE_READY,
     };
 
-    GigaControl(GigaConfig& the_config) : config(the_config) {}
+    GigaControl(GigaConfig& the_config) : config(the_config), rebootTimer(REBOOT_COUNTDOWN) {}
 
     GigaControl::rc setup();
     void loop();
+    void command(uint8_t client_id, char char_received);
+    GigaControl::rc get_response(uint8_t* client_id, char* buf);
 
 };
 

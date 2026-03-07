@@ -32,11 +32,14 @@
 
 #define MAX_CLIENTS  8
 
+#define CLIENT_WELCOME "[load cell command processor]\n"
+
 class GigaEthernet {
 
   private:
-  	// Hold a reference to the config subsystem
+  	// Hold references to subsystems
 	  GigaConfig& config;
+    GigaControl& control;
 
     // One IOC server and multiple possible clients, even if only one is expected to be used at a time
     EthernetServer ioc_server;
@@ -67,10 +70,12 @@ class GigaEthernet {
         ETHER_NO_CABLE,
     };
 
-    GigaEthernet(GigaConfig& the_config) : config(the_config), 
-                                           ioc_server(ETHERNET_IOC_PORT), 
-                                           control_server(ETHERNET_CONTROL_PORT),
-                                           udp() {}
+    GigaEthernet(GigaConfig& the_config,GigaControl& the_control) : 
+                config(the_config), 
+                control(the_control),
+                ioc_server(ETHERNET_IOC_PORT), 
+                control_server(ETHERNET_CONTROL_PORT),
+                udp() {}
 
     GigaEthernet::rc_ethernet setup();
     void loop();

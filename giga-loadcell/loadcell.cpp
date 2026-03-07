@@ -169,7 +169,7 @@ void Loadcell::loop() {
       // When reset is complete, turn the 485 enable back on
       if (shield_reset_timer.done()) {
 
-        sprintf(message_text, "[LC] RS485 shield reset complete.");
+        sprintf(message_text, "[LC] RS485 shield resetting!");
         SerialUSB.println(message_text);
 
         set_485_shield_enable(true);

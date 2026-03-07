@@ -79,10 +79,14 @@ GigaEthernet::rc_ethernet GigaEthernet::setup() {
 void GigaEthernet::loop() {
 
   char client_buffer[128] = {0};
+  uint8_t client_id;
 
   // This value is never actually used but we need it to consume any data coming from the clients,
   // which are ignored for the load cell implementation.
   volatile char __attribute__((unused)) dummy;
+
+  // Temporary storage for a byte coming from the control client
+  volatile uint8_t temp;
 
   // Check for any new client connecting to the IOC server
   EthernetClient new_client = ioc_server.accept();
@@ -107,18 +111,37 @@ void GigaEthernet::loop() {
         // Once we "accept", the client is no longer tracked by EthernetServer
         // so we must store it into our list of clients
         control_clients[i] = new_control_client;
+        control_send(i, CLIENT_WELCOME);
         break;
       }
     }
   }
 
-  // Check for incoming data from all clients and throw it away, as it is not needed
+  // Check for incoming data from all IOC clients and throw it away, as it is not needed
   for (byte i = 0; i < MAX_CLIENTS; i++) {
     while (ioc_clients[i] && ioc_clients[i].available() > 0) {
 
       // read incoming data from the client into a variable but do nothing with it
       dummy = ioc_clients[i].read();
     }
+  }
+
+  // Check for incoming data from control client and do the initial command parsing
+  for (byte i = 0; i < MAX_CLIENTS; i++) {
+    while (control_clients[i] && control_clients[i].available() > 0) {
+
+      // read incoming data from the client into a variable but do nothing with it
+      temp = control_clients[i].read();
+
+      // tell the control instance that a new command byte has arrived
+      control.command(i, temp);
+    }
+  }
+
+  // Check for command responses and send them back to the client
+  if (control.get_response(&client_id, client_buffer) == GigaControl::rc::CONTROL_RESPONSE_READY) {
+
+    control_send(client_id, client_buffer);
   }
 
   // stop any clients which disconnect
