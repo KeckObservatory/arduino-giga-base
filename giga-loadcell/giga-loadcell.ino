@@ -47,7 +47,8 @@ void setup() {
   SerialUSB.begin(115200);
   SerialUSB.println("");
   SerialUSB.println("--------------------------------------------------------------------------------");
-  SerialUSB.println(">>> Load cell device initialization start.");
+  SerialUSB.print(">>> Load cell device initialization start.  Version: ");
+  SerialUSB.println(GIGA_VERSION);
 
   auto ver = __cplusplus;
   SerialUSB.print(">>> Built with C++ version: ");  
