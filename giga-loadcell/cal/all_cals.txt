@@ -33,3 +33,53 @@ cal.const = -315
 sensor.sn = 2668
 cal.slope = 0.005525
 cal.const = -206.2
+
+# 20260330
+
+sensor.sn = 2702
+cal.slope = 0.005474
+cal.const = 0.0
+
+sensor.sn = 2748
+cal.slope = 0.005215
+cal.const = 0.0
+
+sensor.sn = 2744
+cal.slope = 0.005387
+cal.const = 0.0
+
+sensor.sn = 2703
+cal.slope = 0.005222
+cal.const = 0.0
+
+sensor.sn = 2707
+cal.slope = 0.005360
+cal.const = 0.0
+
+sensor.sn = 2676
+cal.slope = 0.005250
+cal.const = 0.0
+
+sensor.sn = 2690
+cal.slope = 0.005278
+cal.const = 0.0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

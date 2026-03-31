@@ -1,0 +1,3 @@
+sensor.sn = 2748
+cal.slope = 0.005215
+cal.const = 0.0
