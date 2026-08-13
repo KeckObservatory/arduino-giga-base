@@ -23,8 +23,8 @@
 #include "giga-config.h"
 #include "loadcell.h"
 
-// Code versioning as of 2026-03-06
-#define GIGA_VERSION "1-0-3" 
+// Code versioning as of 2026-08-13
+#define GIGA_VERSION "1-0-4" 
 
 // Instances of the classes needed to run the LED, USB, registry, network, and load cell 
 GigaLED led;
